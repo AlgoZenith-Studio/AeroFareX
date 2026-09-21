@@ -1,0 +1,11 @@
+{
+  "name": "@airfare/design-tokens",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Single source of truth for AirFare CSS custom properties and the Tailwind preset built on top of them.",
+  "main": "tailwind-preset.js",
+  "files": [
+    "tokens.css",
+    "tailwind-preset.js"
+  ]
+}
