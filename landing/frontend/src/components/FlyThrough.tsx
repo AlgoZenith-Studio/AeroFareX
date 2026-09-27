@@ -34,6 +34,30 @@ const ROUTE = {
   end: { x: 91, y: -12 },
 };
 const ENGINE_X = [34, 66] as const;
+// Illustrative fare for the receipt (labelled "Example fare" on screen).
+const FARE = [
+  { key: 'base', label: 'Base fare', amount: 4200 },
+  { key: 'tax', label: '+ Taxes & GST', amount: 780 },
+  { key: 'fee', label: '+ Airline & airport fees', amount: 1150 },
+] as const;
+const FARE_TOTAL = FARE.reduce((sum, line) => sum + line.amount, 0);
+const FARE_MARKUP = Math.round((FARE_TOTAL / FARE[0].amount - 1) * 100);
+// Section-progress timeline per layout. Desktop: the ticket sits lower right,
+// off the plane's path, so both play together. Mobile: the ticket spans the
+// width, so the plane flies earlier and the ticket rises once its tail is clear.
+const TIMELINE = {
+  desktop: { route: [0.2, 0.9], wakeOut: [0.86, 1], receipt: 0.34 },
+  mobile: { route: [0.12, 0.52], wakeOut: [0.55, 0.8], receipt: 0.4 },
+} as const;
+const MOBILE_MAX_WIDTH = 760;
+// Receipt beats, as offsets from the timeline's receipt start.
+const RECEIPT_RISE = 0.05;
+const RECEIPT_ROW = 0.05;
+const RECEIPT_TOTAL = [0.22, 0.26] as const;
+const RECEIPT_HIGHLIGHT_SETTLE = [0.26, 0.32] as const;
+// Held until the sky starts blending into the next section.
+const RECEIPT_OUT = [0.82, 0.88] as const;
+const rupees = (value: number) => `₹${value.toLocaleString('en-IN')}`;
 const ENGINE_Y = 56;
 const ROUTE_SAMPLES = 160;
 
@@ -120,7 +144,7 @@ const CLOUDS: Cloud[] = [
   { top: -20, left: 53, width: 38, opacity: 0.82, depth: 0.45 },
   { top: 5, left: 62, width: 46, opacity: 0.78, depth: 0.68 },
   { top: 30, left: -6, width: 30, opacity: 0.65, depth: 0.32 },
-  { top: 48, left: 70, width: 34, opacity: 0.78, depth: 0.8 },
+  { top: 48, left: 70, width: 26, opacity: 0.5, depth: 0.5 }, // far back: sits behind the ticket
   { top: 62, left: 22, width: 52, opacity: 0.8, depth: 0.58 },
   { top: 85, left: 55, width: 40, opacity: 0.72, depth: 0.5 },
   { top: 100, left: -10, width: 48, opacity: 0.75, depth: 0.72 },
@@ -145,6 +169,8 @@ export const FlyThrough: React.FC = () => {
     const plane = section.querySelector<HTMLElement>('.fly-plane');
     if (!stage || !plane) return;
     const clouds = section.querySelectorAll<HTMLImageElement>('.fly-cloud');
+    const totalValue = section.querySelector<HTMLElement>('.fr-total-value');
+    let shownTotal = -1;
 
     let raf = 0;
     let running = false;
@@ -191,7 +217,9 @@ export const FlyThrough: React.FC = () => {
       if (Math.abs(target - current) < 0.0005) current = target;
       section.style.setProperty('--p', current.toFixed(4));
 
-      const routeProgress = clamp01((current - 0.2) / 0.7);
+      const timeline = stageWidth < MOBILE_MAX_WIDTH ? TIMELINE.mobile : TIMELINE.desktop;
+      const [routeFrom, routeTo] = timeline.route;
+      const routeProgress = clamp01((current - routeFrom) / (routeTo - routeFrom));
       const point = routePoint(routeProgress);
       const cloudX = ROUTE.start.x - point.x;
       const cloudY = ROUTE.start.y - point.y;
@@ -200,33 +228,41 @@ export const FlyThrough: React.FC = () => {
         cloud.style.transform = `translate3d(${(cloudX * depth).toFixed(2)}vw, ${(cloudY * depth).toFixed(2)}vh, 0)`;
       });
       const angle = routeAngle(point, stageWidth, stageHeight);
-      const merge = smoothstep(0.59, 0.67, current);
-      const componentOpacity = 1 - merge;
       section.style.setProperty('--plane-tx', `${(point.x * stageWidth / 100).toFixed(1)}px`);
       section.style.setProperty('--plane-ty', `${(point.y * stageHeight / 100).toFixed(1)}px`);
       section.style.setProperty('--plane-angle', `${(angle * 180 / Math.PI).toFixed(2)}deg`);
       section.style.setProperty('--plane-scale', (0.86 + routeProgress * 0.16).toFixed(3));
       section.style.setProperty('--plane-opacity', (
-        smoothstep(0.2, 0.28, current) * (1 - smoothstep(0.79, 0.9, current))
+        smoothstep(routeFrom, routeFrom + 0.08, current) * (1 - smoothstep(0.84, 1, routeProgress))
       ).toFixed(3));
       section.style.setProperty('--route-progress-left', wakeArcFraction(routeProgress, wakeFractions.current[0]).toFixed(4));
       section.style.setProperty('--route-progress-right', wakeArcFraction(routeProgress, wakeFractions.current[1]).toFixed(4));
       section.style.setProperty('--route-opacity', (
-        smoothstep(0.27, 0.36, current) * (1 - smoothstep(0.8, 0.95, current))
+        smoothstep(0.1, 0.23, routeProgress) * (1 - smoothstep(timeline.wakeOut[0], timeline.wakeOut[1], routeProgress))
       ).toFixed(3));
-      section.style.setProperty('--merge', merge.toFixed(3));
-      section.style.setProperty('--base-opacity', (
-        smoothstep(0.36, 0.43, current) * componentOpacity
+
+      // Receipt: lift in, print each row, then the total locks in with one brief
+      // highlight and holds until the sky hands over to the next section.
+      const start = timeline.receipt;
+      section.style.setProperty('--receipt-in', (
+        smoothstep(start, start + RECEIPT_RISE, current) * (1 - smoothstep(RECEIPT_OUT[0], RECEIPT_OUT[1], current))
       ).toFixed(3));
-      section.style.setProperty('--tax-opacity', (
-        smoothstep(0.43, 0.5, current) * componentOpacity
-      ).toFixed(3));
-      section.style.setProperty('--fee-opacity', (
-        smoothstep(0.5, 0.57, current) * componentOpacity
-      ).toFixed(3));
-      section.style.setProperty('--total-opacity', (
-        smoothstep(0.65, 0.71, current) * (1 - smoothstep(0.77, 0.85, current))
-      ).toFixed(3));
+      // The total steps one charge at a time: only real subtotals, never in-between prices.
+      let subtotal = 0;
+      FARE.forEach((line, index) => {
+        const from = start + RECEIPT_RISE + RECEIPT_ROW * index;
+        const printed = smoothstep(from, from + RECEIPT_ROW, current);
+        if (printed >= 0.5) subtotal += line.amount;
+        section.style.setProperty(`--line-${line.key}`, printed.toFixed(3));
+      });
+      const done = smoothstep(start + RECEIPT_TOTAL[0], start + RECEIPT_TOTAL[1], current);
+      const settle = smoothstep(start + RECEIPT_HIGHLIGHT_SETTLE[0], start + RECEIPT_HIGHLIGHT_SETTLE[1], current);
+      section.style.setProperty('--total-done', done.toFixed(3));
+      section.style.setProperty('--total-highlight', (done * (1 - settle * 0.7)).toFixed(3));
+      if (totalValue && subtotal !== shownTotal) {
+        shownTotal = subtotal;
+        totalValue.textContent = rupees(subtotal);
+      }
 
       const v = videoRef.current;
       if (v && v.readyState >= 1 && Number.isFinite(v.duration) && !v.seeking) {
@@ -322,11 +358,26 @@ export const FlyThrough: React.FC = () => {
           <PlaneModelCanvas />
         </div>
 
-        <div className="fly-breakdown">
-          <span className="fly-fee fly-fee--base">Base fare</span>
-          <span className="fly-fee fly-fee--tax">+ Taxes</span>
-          <span className="fly-fee fly-fee--fee">+ Fees</span>
-          <span className="fly-fee fly-fee--total">Total paid</span>
+        <div className="fly-receipt">
+          <div className="fr-card">
+            <div className="fr-head">
+              <span className="fr-route">DEL <span className="fr-route-line" /> BOM</span>
+              <span className="fr-tag">Example fare</span>
+            </div>
+            <dl className="fr-lines">
+              {FARE.map((line) => (
+                <div key={line.key} className={`fr-line fr-line--${line.key}`}>
+                  <dt>{line.label}</dt>
+                  <dd className="num">{rupees(line.amount)}</dd>
+                </div>
+              ))}
+            </dl>
+            <div className="fr-total">
+              <span>You actually pay</span>
+              <strong className="fr-total-value num">{rupees(0)}</strong>
+            </div>
+            <p className="fr-note">+{FARE_MARKUP}% over the base fare</p>
+          </div>
         </div>
 
         <div className="fly-fade fly-fade--in" />

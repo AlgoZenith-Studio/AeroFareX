@@ -387,10 +387,11 @@ h1, h2, h3, h4, .hero-title, .h2, .trust-item strong, .ed-box-num, .gap-giant, .
   margin-bottom: clamp(40px, 5vw, 80px);
 }
 .ed-title {
-  font-size: clamp(40px, 5.4vw, 92px); line-height: 0.95; letter-spacing: -0.02em;
+  font-size: clamp(40px, 5.4vw, 92px);
+  /* 0.95 packed multi-line titles tight enough for descenders (g, y) to graze
+     the ascenders of the line below; this is the row gap, not word spacing. */
+  line-height: 1.12; letter-spacing: -0.02em;
   margin-top: clamp(32px, 4vw, 64px); max-width: 14ch;
-  /* At this size the shared 0.06em word-spacing reads as touching; widen it here. */
-  word-spacing: 0.18em;
 }
 .ed-lead { font-size: clamp(18px, 1.5vw, 24px); line-height: 1.35; color: var(--text-2); max-width: 36ch; }
 .ed-head .ed-lead { justify-self: end; padding-bottom: 6px; }
@@ -587,10 +588,10 @@ h1, h2, h3, h4, .hero-title, .h2, .trust-item strong, .ed-box-num, .gap-giant, .
 .fly {
   --p: 0; --plane-tx: -100px; --plane-ty: 60vh; --plane-angle: 0deg;
   --plane-scale: 0.86; --plane-opacity: 0; --route-progress-left: 0; --route-progress-right: 0; --route-opacity: 0;
-  --merge: 0; --base-opacity: 0; --tax-opacity: 0; --fee-opacity: 0; --total-opacity: 0;
-  position: relative; height: 200vh; margin-bottom: -100vh; background: var(--ink);
+  --receipt-in: 0; --line-base: 0; --line-tax: 0; --line-fee: 0; --total-done: 0; --total-highlight: 0;
+  position: relative; height: 240vh; margin-bottom: -100vh; background: var(--ink);
   /* svh stays fixed while the mobile URL bar slides, so progress never jumps */
-  height: 200svh; margin-bottom: -100svh;
+  height: 240svh; margin-bottom: -100svh;
 }
 .fly-stage { position: sticky; top: 0; height: 100vh; height: 100svh; overflow: hidden; isolation: isolate; }
 /* Sky climbs from ink (matches hero) to sky-400 (matches the manifesto).
@@ -615,7 +616,7 @@ h1, h2, h3, h4, .hero-title, .h2, .trust-item strong, .ed-box-num, .gap-giant, .
 .fly[data-mode='video'] .fly-clouds,
 .fly[data-mode='video'] .fly-route,
 .fly[data-mode='video'] .fly-plane,
-.fly[data-mode='video'] .fly-breakdown { display: none; }
+.fly[data-mode='video'] .fly-receipt { display: none; }
 
 /* Clouds move opposite the plane, at different depths. */
 .fly-clouds { position: absolute; inset: 0; }
@@ -634,25 +635,79 @@ h1, h2, h3, h4, .hero-title, .h2, .trust-item strong, .ed-box-num, .gap-giant, .
 .fly-plane-model { position: relative; width: 100%; aspect-ratio: 5 / 6; }
 .fly-plane-model canvas, .fly-plane-svg { position: absolute; inset: 0; display: block; width: 100%; height: 100%; }
 .fly-plane-model.is-ready .fly-plane-svg { display: none; }
-.fly-breakdown {
-  --fee-step: 58px;
-  position: absolute; top: 28%; left: clamp(28px, 10vw, 170px);
-  width: clamp(170px, 20vw, 270px); height: calc(var(--fee-step) * 3);
-  color: var(--white); font-size: clamp(15px, 1.2vw, 19px); font-weight: 700;
+/* Fare receipt: a ticket stub whose lines print in as you scroll. */
+/* Lower right: the plane climbs bottom-left to top-right and never crosses here. */
+.fly-receipt {
+  position: absolute; bottom: 12%; right: clamp(28px, 8vw, 150px);
+  width: clamp(260px, 24vw, 330px);
   pointer-events: none;
+  opacity: var(--receipt-in);
+  transform: translate3d(0, calc((1 - var(--receipt-in)) * 16px), 0);
+  will-change: transform, opacity;
+  filter: drop-shadow(0 18px 30px rgba(3, 18, 28, 0.35));
 }
-.fly-fee {
-  position: absolute; left: 0; display: inline-block;
-  padding: 6px 14px; border: 1px solid var(--dark-line); border-radius: var(--r-pill);
-  background: var(--dark-glass-strong); white-space: nowrap;
+.fr-card {
+  --tear-y: 58px;
+  position: relative;
+  padding: 0 22px 14px;
+  background: var(--white); color: var(--black);
+  border-radius: var(--r-lg);
+  /* Notches cut into both edges where the stub tears off */
+  -webkit-mask:
+    radial-gradient(circle 9px at 0 var(--tear-y), #0000 98%, #000) left / 51% 100% no-repeat,
+    radial-gradient(circle 9px at 100% var(--tear-y), #0000 98%, #000) right / 51% 100% no-repeat;
+  mask:
+    radial-gradient(circle 9px at 0 var(--tear-y), #0000 98%, #000) left / 51% 100% no-repeat,
+    radial-gradient(circle 9px at 100% var(--tear-y), #0000 98%, #000) right / 51% 100% no-repeat;
 }
-.fly-fee--base { top: 0; opacity: var(--base-opacity); transform: translateY(calc(var(--merge) * var(--fee-step))); }
-.fly-fee--tax { top: var(--fee-step); opacity: var(--tax-opacity); }
-.fly-fee--fee { top: calc(var(--fee-step) * 2); opacity: var(--fee-opacity); transform: translateY(calc(var(--merge) * var(--fee-step) * -1)); }
-.fly-fee--total {
-  top: var(--fee-step); opacity: var(--total-opacity); background: var(--ink);
-  border-color: var(--sky-400); box-shadow: 0 0 20px var(--dark-glass);
-  transform: scale(calc(0.9 + var(--total-opacity) * 0.1));
+.fr-head {
+  height: var(--tear-y);
+  display: flex; align-items: center; justify-content: space-between; gap: var(--s-3);
+  border-bottom: 1.5px dashed var(--line-deep);
+}
+.fr-route {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-size: var(--fs-md); font-weight: 700; letter-spacing: 0.06em;
+}
+.fr-route-line {
+  position: relative; width: 30px; height: 0; border-top: 1.5px dashed currentColor; opacity: 0.55;
+}
+.fr-route-line::after {
+  content: ''; position: absolute; right: -2px; top: -4.5px;
+  border: 3.5px solid transparent; border-left: 5px solid currentColor;
+}
+.fr-tag {
+  font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--text-3); white-space: nowrap;
+}
+.fr-lines { margin: 14px 0 12px; }
+.fr-line {
+  display: flex; justify-content: space-between; align-items: baseline; gap: var(--s-4);
+  padding: 7px 0; font-size: var(--fs-sm); color: var(--text-2);
+}
+.fr-line dd { font-weight: 700; color: var(--black); font-variant-numeric: tabular-nums; }
+.fr-line--base { opacity: var(--line-base); transform: translate3d(calc((1 - var(--line-base)) * -14px), 0, 0); }
+.fr-line--tax { opacity: var(--line-tax); transform: translate3d(calc((1 - var(--line-tax)) * -14px), 0, 0); }
+.fr-line--fee { opacity: var(--line-fee); transform: translate3d(calc((1 - var(--line-fee)) * -14px), 0, 0); }
+.fr-total {
+  position: relative; isolation: isolate; opacity: var(--line-base);
+  display: flex; justify-content: space-between; align-items: baseline; gap: var(--s-4);
+  margin: 0 -10px; padding: 12px 10px;
+  border-top: 2px solid var(--black);
+  font-size: var(--fs-sm); font-weight: 700;
+}
+/* Highlight washes in once every charge has landed */
+.fr-total::before {
+  content: ''; position: absolute; inset: 0; z-index: -1; border-radius: var(--r-sm);
+  background: var(--sky-100); opacity: var(--total-highlight);
+}
+.fr-total-value {
+  font-family: var(--font-primary); font-size: clamp(26px, 2.4vw, 34px); line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.fr-note {
+  margin-top: 4px; font-size: var(--fs-xs); font-weight: 700; color: var(--accent-hover);
+  opacity: var(--total-done); transform: translate3d(0, calc((1 - var(--total-done)) * 6px), 0);
 }
 /* Seamless joins: solid ink at the start, solid sky-400 at the end */
 .fly-fade { position: absolute; inset: 0; pointer-events: none; }
@@ -660,7 +715,8 @@ h1, h2, h3, h4, .hero-title, .h2, .trust-item strong, .ed-box-num, .gap-giant, .
 .fly-fade--out { background: var(--sky-400); opacity: clamp(0, calc((var(--p) - 0.82) * 5.6), 1); }
 
 @media (max-width: 760px) {
-  .fly-breakdown { top: 30%; left: var(--gutter); font-size: 15px; }
+  /* No drop shadow on phones: its filter would redraw as each line prints. */
+  .fly-receipt { bottom: 6%; left: var(--gutter); right: auto; width: min(300px, calc(100vw - var(--gutter) * 2)); filter: none; }
   .fly-plane { width: clamp(80px, 16vmin, 120px); filter: none; }
   /* Phones: per-frame blur and SVG noise filters are what made this scene stutter. */
   .fly-cloud { filter: none; }
