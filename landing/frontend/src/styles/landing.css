@@ -158,7 +158,7 @@ h1, h2, h3, h4, .hero-title, .h2, .trust-item strong, .ed-box-num, .gap-giant, .
   border-radius: var(--r-pill);
   background: var(--dark-glass);
   border: 1px solid var(--line);
-  backdrop-filter: blur(18px) saturate(160%); -webkit-backdrop-filter: blur(18px) saturate(160%);
+  -webkit-backdrop-filter: blur(18px) saturate(160%); backdrop-filter: blur(18px) saturate(160%);
   box-shadow: var(--shadow-dark), var(--dark-inset);
 }
 .brand { display: flex; align-items: center; flex-shrink: 0; }
@@ -190,7 +190,7 @@ h1, h2, h3, h4, .hero-title, .h2, .trust-item strong, .ed-box-num, .gap-giant, .
   display: flex; flex-direction: column;
   border-radius: var(--r-xl);
   background: var(--dark-glass-strong); border: 1px solid var(--line);
-  backdrop-filter: blur(18px) saturate(160%); -webkit-backdrop-filter: blur(18px) saturate(160%);
+  -webkit-backdrop-filter: blur(18px) saturate(160%); backdrop-filter: blur(18px) saturate(160%);
   box-shadow: var(--shadow-dark-lg);
 }
 .mobile-menu a { padding: var(--s-4) 0; font-size: var(--fs-md); font-weight: 600; color: var(--text-2); border-bottom: 1px solid var(--line); }
