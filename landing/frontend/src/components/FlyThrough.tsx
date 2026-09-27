@@ -51,30 +51,6 @@ const ROUTE = {
   end: { x: 97, y: -14 },
 };
 const ENGINE_X = [34, 66] as const;
-// Illustrative fare for the receipt (labelled "Example fare" on screen).
-const FARE = [
-  { key: 'base', label: 'Base fare', amount: 4200 },
-  { key: 'tax', label: '+ Taxes & GST', amount: 780 },
-  { key: 'fee', label: '+ Airline & airport fees', amount: 1150 },
-] as const;
-const FARE_TOTAL = FARE.reduce((sum, line) => sum + line.amount, 0);
-const FARE_MARKUP = Math.round((FARE_TOTAL / FARE[0].amount - 1) * 100);
-// Section-progress timeline per layout. Desktop: the ticket sits lower right,
-// off the plane's path, so both play together. Mobile: the ticket spans the
-// width, so the plane flies earlier and the ticket rises once its tail is clear.
-const TIMELINE = {
-  desktop: { route: [0.2, 0.9], wakeOut: [0.86, 1], receipt: 0.34 },
-  mobile: { route: [0.12, 0.52], wakeOut: [0.55, 0.8], receipt: 0.4 },
-} as const;
-const MOBILE_MAX_WIDTH = 760;
-// Receipt beats, as offsets from the timeline's receipt start.
-const RECEIPT_RISE = 0.05;
-const RECEIPT_ROW = 0.05;
-const RECEIPT_TOTAL = [0.22, 0.26] as const;
-const RECEIPT_HIGHLIGHT_SETTLE = [0.26, 0.32] as const;
-// Held until the sky starts blending into the next section.
-const RECEIPT_OUT = [0.82, 0.88] as const;
-const rupees = (value: number) => `₹${value.toLocaleString('en-IN')}`;
 const ENGINE_Y = 56;
 const ROUTE_SAMPLES = 160;
 
@@ -128,7 +104,7 @@ const CLOUDS: Cloud[] = [
   { top: -20, left: 53, width: 38, opacity: 0.82, depth: 0.45 },
   { top: 5, left: 62, width: 46, opacity: 0.78, depth: 0.68 },
   { top: 30, left: -6, width: 30, opacity: 0.65, depth: 0.32 },
-  { top: 48, left: 70, width: 26, opacity: 0.5, depth: 0.5 }, // far back: sits behind the ticket
+  { top: 48, left: 70, width: 34, opacity: 0.78, depth: 0.8 },
   { top: 62, left: 22, width: 52, opacity: 0.8, depth: 0.58 },
   { top: 85, left: 55, width: 40, opacity: 0.72, depth: 0.5 },
   { top: 100, left: -10, width: 48, opacity: 0.75, depth: 0.72 },
@@ -196,7 +172,7 @@ export const FlyThrough: React.FC = () => {
     const measure = () => {
       width = stage.clientWidth;
       height = stage.clientHeight;
-      screens = section.offsetHeight / window.innerHeight || 3;
+      screens = section.offsetHeight / (stage.clientHeight || window.innerHeight) || 3;
       const planeWidth = plane.offsetWidth;
       if (!width || !height || !planeWidth) return;
       const dpr = Math.min(window.devicePixelRatio || 1, MAX_DPR);
@@ -302,8 +278,11 @@ export const FlyThrough: React.FC = () => {
     };
 
     const targetScreens = (): number => {
+      // One "screen" = the stage height (100svh), which doesn't change while the
+      // mobile URL bar slides in and out, so progress never jumps mid-scroll.
+      const unit = stage.clientHeight || window.innerHeight;
       const top = section.getBoundingClientRect().top;
-      return Math.min(screens, Math.max(0, (window.innerHeight - top) / window.innerHeight));
+      return Math.min(screens, Math.max(0, (unit - top) / unit));
     };
 
     let raf = 0;
