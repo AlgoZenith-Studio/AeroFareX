@@ -2,7 +2,17 @@ import React, { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { loadAirliner, disposeAirliner } from './aircraft3d';
 
-/** Top view of the hero aircraft for the scroll-controlled route. */
+/** Room around the plane for its baked-in drop shadow (CSS px). */
+const SHADOW_PAD = 48;
+
+/**
+ * Top view of the hero aircraft for the scroll-controlled route.
+ *
+ * The model never changes pose (the parent rotates the whole element), so it is
+ * rendered once per size into an offscreen WebGL canvas and copied, with its
+ * drop shadow baked in, onto a plain 2D canvas. The moving layer is then a
+ * static bitmap: no WebGL frames and no live CSS filter while scrolling.
+ */
 export const PlaneModelCanvas: React.FC = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const hostRef = useRef<HTMLDivElement>(null);
@@ -11,10 +21,11 @@ export const PlaneModelCanvas: React.FC = () => {
   useEffect(() => {
     const canvas = canvasRef.current;
     const host = hostRef.current;
-    if (!canvas || !host) return;
+    const ctx = canvas?.getContext('2d');
+    if (!canvas || !host || !ctx) return;
     let renderer: THREE.WebGLRenderer;
     try {
-      renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true, powerPreference: 'low-power' });
+      renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true, powerPreference: 'low-power' });
     } catch {
       return;
     }
@@ -34,16 +45,26 @@ export const PlaneModelCanvas: React.FC = () => {
     camera.position.set(0, 12, 0);
     camera.lookAt(0, 0, 0);
 
+    // Shadow colour from the design tokens (--shadow-dark), not a literal.
+    const shadow = getComputedStyle(host).getPropertyValue('--shadow-dark');
+    const shadowColor = shadow.match(/rgba?\([^)]*\)/)?.[0] ?? 'transparent';
+
     const render = () => {
       const width = host.clientWidth;
       const height = host.clientHeight;
-      if (!width || !height) return;
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.7));
+      if (!width || !height || !aircraft) return;
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      renderer.setPixelRatio(dpr);
       renderer.setSize(width, height, false);
-      if (aircraft) {
-        renderer.render(scene, camera);
-        setReady(true);
-      }
+      renderer.render(scene, camera);
+      canvas.width = Math.round((width + SHADOW_PAD * 2) * dpr);
+      canvas.height = Math.round((height + SHADOW_PAD * 2) * dpr);
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.shadowColor = shadowColor;
+      ctx.shadowBlur = 40 * dpr;
+      ctx.shadowOffsetY = 12 * dpr;
+      ctx.drawImage(renderer.domElement, SHADOW_PAD * dpr, SHADOW_PAD * dpr, width * dpr, height * dpr);
+      setReady(true);
     };
     const resizeObserver = new ResizeObserver(render);
     resizeObserver.observe(host);
@@ -63,7 +84,7 @@ export const PlaneModelCanvas: React.FC = () => {
 
   return (
     <div ref={hostRef} className={`fly-plane-model${ready ? ' is-ready' : ''}`}>
-      <canvas ref={canvasRef} />
+      <canvas ref={canvasRef} style={{ inset: -SHADOW_PAD, width: `calc(100% + ${SHADOW_PAD * 2}px)`, height: `calc(100% + ${SHADOW_PAD * 2}px)` }} />
       <svg className="fly-plane-svg" viewBox="0 0 100 120" fill="currentColor" aria-hidden="true">
         <path d="M50 3c3.2 0 5 6 5 15v24l40 24v7l-40-10v25l14 10v5l-19-5-19 5v-5l14-10V63L5 73v-7l40-24V18c0-9 1.8-15 5-15z" />
       </svg>

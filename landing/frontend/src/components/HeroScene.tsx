@@ -120,6 +120,7 @@ export const HeroScene: React.FC = () => {
     let introStart: number | null = null;
     let approach: Approach | null = null;
     let approachMobile = false;
+    let lastWake = '';
     const resize = () => {
       width = host.clientWidth;
       height = host.clientHeight;
@@ -173,7 +174,9 @@ export const HeroScene: React.FC = () => {
         aircraft.rotation.set(pitch, headingYaw(tangent), bank, 'YXZ');
         const textWake = reduced ? 0
           : ease(clamp01((intro - 0.18) / 0.16)) * (1 - ease(clamp01((intro - 0.56) / 0.17)));
-        hero?.style.setProperty('--hero-text-wake', textWake.toFixed(3));
+        // Only write on change: this property restyles the whole hero.
+        const wake = textWake.toFixed(3);
+        if (wake !== lastWake) { lastWake = wake; hero?.style.setProperty('--hero-text-wake', wake); }
         aircraft.scale.setScalar((mobile ? 0.45 : 0.95) * (1 + forward * 0.025));
       }
       clouds.forEach((cloud) => {

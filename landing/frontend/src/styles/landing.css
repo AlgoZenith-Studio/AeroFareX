@@ -211,8 +211,8 @@ h1, h2, h3, h4, .hero-title, .h2, .trust-item strong, .ed-box-num, .gap-giant, .
   position: absolute; inset: 0; width: 100%; height: 100%; display: block;
 }
 .hero-scene-canvas { pointer-events: none; }
-/* The dark lower edge joins the ink sky at the start of the flight section. */
-.hero-handoff { position: absolute; inset: 0; background: linear-gradient(180deg, transparent 75%, var(--ink) 100%); }
+/* The lower edge fades into the light sky at the start of the flight section. */
+.hero-handoff { position: absolute; inset: 0; background: linear-gradient(180deg, transparent 72%, var(--sky-400) 100%); }
 /* Keep the headline legible over the sky image. */
 .hero-scrim {
   position: absolute; inset: 0;
@@ -275,7 +275,7 @@ h1, h2, h3, h4, .hero-title, .h2, .trust-item strong, .ed-box-num, .gap-giant, .
   .header-bar { padding: 0 var(--header-inset) 0 var(--s-5); }
   :root { --header-inset: 10px; }
   .hero-scrim { background: linear-gradient(180deg, rgba(5, 8, 12, 0.55) 0%, rgba(5, 8, 12, 0.76) 55%, rgba(5, 8, 12, 0.28) 78%, rgba(5, 8, 12, 0.25) 100%); }
-  .hero-handoff { background: linear-gradient(180deg, transparent 88%, var(--ink) 100%); }
+  .hero-handoff { background: linear-gradient(180deg, transparent 86%, var(--sky-400) 100%); }
   .hero .hero-title { width: auto; max-width: 100%; font-size: clamp(34px, 10vw, 48px); }
   .hero .hero-row { white-space: normal; }
   .hero-ctas .btn { flex: 1 1 auto; }
@@ -387,8 +387,9 @@ h1, h2, h3, h4, .hero-title, .h2, .trust-item strong, .ed-box-num, .gap-giant, .
   margin-bottom: clamp(40px, 5vw, 80px);
 }
 .ed-title {
-  font-size: clamp(40px, 5.4vw, 92px); line-height: 0.95; letter-spacing: -0.02em;
-  margin-top: clamp(32px, 4vw, 64px); max-width: 14ch;
+  /* 1.08 leaves room for descenders (g, y, p) above the next line's capitals */
+  font-size: clamp(40px, 5.4vw, 92px); line-height: 1.08; letter-spacing: -0.02em;
+  margin-top: clamp(32px, 4vw, 64px); max-width: 14ch; text-wrap: balance;
 }
 .ed-lead { font-size: clamp(18px, 1.5vw, 24px); line-height: 1.35; color: var(--text-2); max-width: 36ch; }
 .ed-head .ed-lead { justify-self: end; padding-bottom: 6px; }
@@ -579,86 +580,279 @@ h1, h2, h3, h4, .hero-title, .h2, .trust-item strong, .ed-box-num, .gap-giant, .
 .foot-top-link { display: inline-flex; align-items: center; gap: var(--s-1); color: var(--text-2); transition: color var(--dur) var(--ease); }
 .foot-top-link:hover { color: var(--text-1); }
 
-/* ---------- scroll transition (hero -> manifesto) */
-/* margin-bottom:-100vh lets the next section slide up OVER the pinned stage for the
-   last screen of travel, so there is no empty sky after the plane has gone */
+/* ---------- scroll transition (hero -> manifesto), see components/FlyThrough.tsx */
+/* Three screens tall. margin-bottom:-100vh lets the manifesto slide up OVER the
+   pinned stage for the last screen, so the middle screen is the one where the
+   stage is fully visible and the workflow card plays.
+   Everything that moves is written by JS as transform/opacity only. */
 .fly {
-  --p: 0; --plane-x: -8; --plane-y: 60; --plane-angle: 0deg;
-  --plane-scale: 0.86; --plane-opacity: 0; --route-progress-left: 0; --route-progress-right: 0; --route-opacity: 0;
-  --merge: 0; --base-opacity: 0; --tax-opacity: 0; --fee-opacity: 0; --total-opacity: 0;
-  position: relative; height: 200vh; margin-bottom: -100vh; background: var(--ink);
+  position: relative; height: 300vh; margin-bottom: -100vh; background: var(--sky-400);
 }
 .fly-stage { position: sticky; top: 0; height: 100vh; height: 100svh; overflow: hidden; isolation: isolate; }
-/* Sky climbs from ink (matches hero) to sky-400 (matches the manifesto) */
-.fly-sky {
-  position: absolute; inset: 0;
-  background: linear-gradient(180deg, var(--ink) 0%, var(--sky-900) 28%, var(--sky-800) 52%, var(--sky-500) 78%, var(--sky-400) 100%);
-  background-size: 100% 400%;
-  background-position: 50% calc(var(--p) * 100%);
+/* One flat colour for the whole run: sky-400, identical to the manifesto that
+   slides over it, so there is never a second shade or a seam. Static, so nothing
+   re-rasters while scrolling. */
+.fly-sky { position: absolute; inset: 0; background: var(--sky-400); }
+/* Same film grain as the manifesto, so the two surfaces are indistinguishable */
+.fly-sky::after, .fly-fade::after {
+  content: ''; position: absolute; inset: 0;
+  background-image: var(--grain); background-size: var(--grain-size); opacity: var(--grain-opacity);
 }
-.fly-route { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; opacity: var(--route-opacity); }
-.fly-route path {
-  fill: none; stroke: url(#fly-vapor-fade); stroke-linecap: round;
-  stroke-dasharray: 1;
+/* Contrail: crisp core + a quarter-resolution haze the compositor upscales (free blur) */
+.fly-trail, .fly-haze {
+  position: absolute; inset: 0; width: 100%; height: 100%; max-width: none;
+  color: var(--white); opacity: 0; will-change: opacity;
 }
-.fly-route-track--left path { stroke-dashoffset: calc(1 - var(--route-progress-left)); }
-.fly-route-track--right path { stroke-dashoffset: calc(1 - var(--route-progress-right)); }
-.fly-vapor-haze { stroke-width: 3; opacity: 0.42; filter: blur(12px); }
-.fly-vapor-body { stroke-width: 0.9; opacity: 0.65; filter: url(#fly-vapor-texture); }
 .fly-video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; }
 .fly[data-mode='video'] .fly-video { opacity: 1; }
 .fly[data-mode='video'] .fly-clouds,
-.fly[data-mode='video'] .fly-route,
-.fly[data-mode='video'] .fly-plane,
-.fly[data-mode='video'] .fly-breakdown { display: none; }
+.fly[data-mode='video'] .fly-trail,
+.fly[data-mode='video'] .fly-haze,
+.fly[data-mode='video'] .fly-plane { display: none; }
 
 /* Clouds move opposite the plane, at different depths. */
 .fly-clouds { position: absolute; inset: 0; }
-.fly-cloud {
-  position: absolute; display: block; height: auto;
-  filter: blur(2px); will-change: transform;
-}
+.fly-cloud { position: absolute; display: block; height: auto; will-change: transform; }
 .fly-plane {
-  position: absolute;
-  left: calc(var(--plane-x) * 1%); top: calc(var(--plane-y) * 1%);
+  position: absolute; left: 0; top: 0;
   width: clamp(90px, 13vmin, 160px);
-  color: var(--white); opacity: var(--plane-opacity); will-change: transform;
-  filter: drop-shadow(var(--shadow-dark));
-  transform: translate(-50%, -50%) rotate(var(--plane-angle)) scale(var(--plane-scale));
-  transform-origin: 50% 50%;
+  color: var(--white); opacity: 0;
+  will-change: transform, opacity; transform-origin: 50% 50%;
 }
 .fly-plane-model { position: relative; width: 100%; aspect-ratio: 5 / 6; }
-.fly-plane-model canvas, .fly-plane-svg { position: absolute; inset: 0; display: block; width: 100%; height: 100%; }
+.fly-plane-model canvas, .fly-plane-svg { position: absolute; inset: 0; display: block; width: 100%; height: 100%; max-width: none; }
 .fly-plane-model.is-ready .fly-plane-svg { display: none; }
-.fly-breakdown {
-  --fee-step: 58px;
-  position: absolute; top: 28%; left: clamp(28px, 10vw, 170px);
-  width: clamp(170px, 20vw, 270px); height: calc(var(--fee-step) * 3);
-  color: var(--white); font-size: clamp(15px, 1.2vw, 19px); font-weight: 700;
+
+/* Seamless joins: both ends are the same sky-400 as the stage */
+.fly-fade { position: absolute; inset: 0; pointer-events: none; }
+.fly-fade--in { background: var(--sky-400); }
+.fly-fade--out { background: var(--sky-400); opacity: 0; }
+
+/* ---------- workflow (components/WorkflowCard.tsx) */
+/* No container: the pipeline plays straight on the sky, in the manifesto's
+   language (black serif on sky-400). Small data bits sit in light pills. */
+.fly-card {
+  position: absolute; inset: 0; display: flex; align-items: center;
+  padding: calc(var(--header-top) + var(--header-h)) 0 0 clamp(24px, 7vw, 140px);
   pointer-events: none;
 }
-.fly-fee {
-  position: absolute; left: 0; display: inline-block;
-  padding: 6px 14px; border: 1px solid var(--dark-line); border-radius: var(--r-pill);
-  background: var(--dark-glass-strong); white-space: nowrap;
+.wf {
+  --wf-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --wf-glide: cubic-bezier(0.16, 1, 0.3, 1);
+  --pill: color-mix(in srgb, var(--white) 58%, transparent);
+  --pill-edge: color-mix(in srgb, var(--white) 80%, transparent);
+  --ink-soft: color-mix(in srgb, var(--sky-900) 16%, transparent);
+  position: relative;
+  width: clamp(360px, 34vw, 580px);
+  color: var(--text-1); font-family: var(--font-tertiary);
+  opacity: 0; transform-origin: 0 50%; will-change: transform, opacity;
 }
-.fly-fee--base { top: 0; opacity: var(--base-opacity); transform: translateY(calc(var(--merge) * var(--fee-step))); }
-.fly-fee--tax { top: var(--fee-step); opacity: var(--tax-opacity); }
-.fly-fee--fee { top: calc(var(--fee-step) * 2); opacity: var(--fee-opacity); transform: translateY(calc(var(--merge) * var(--fee-step) * -1)); }
-.fly-fee--total {
-  top: var(--fee-step); opacity: var(--total-opacity); background: var(--ink);
-  border-color: var(--sky-400); box-shadow: 0 0 20px var(--dark-glass);
-  transform: scale(calc(0.9 + var(--total-opacity) * 0.1));
+
+.wf-head { display: flex; align-items: flex-end; justify-content: space-between; }
+.wf-kicker {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-size: 12px; font-weight: 800; letter-spacing: 0.16em; text-transform: uppercase; color: var(--text-deep);
 }
-/* Seamless joins: solid ink at the start, solid sky-400 at the end */
-.fly-fade { position: absolute; inset: 0; pointer-events: none; }
-.fly-fade--in { background: var(--ink); opacity: clamp(0, calc(1 - var(--p) * 9), 1); }  /* short lead-in */
-.fly-fade--out { background: var(--sky-400); opacity: clamp(0, calc((var(--p) - 0.82) * 5.6), 1); }
+.wf-live { position: relative; width: 8px; height: 8px; border-radius: 50%; background: var(--sky-900); }
+.wf-live::after, .wf-pulse::after {
+  content: ''; position: absolute; inset: 0; border-radius: 50%; background: inherit;
+  animation: wf-ping 1.8s var(--wf-glide) infinite;
+}
+@keyframes wf-ping { from { transform: scale(1); opacity: 0.6; } to { transform: scale(3); opacity: 0; } }
+
+/* 01 / 04 odometer */
+.wf-count { display: inline-flex; align-items: baseline; gap: 8px; font-family: var(--font-primary); }
+.wf-count-roll { display: block; height: 1em; overflow: hidden; font-size: clamp(40px, 3.6vw, 56px); line-height: 1; color: var(--text-1); }
+.wf-count-col { display: flex; flex-direction: column; transition: transform 700ms var(--wf-spring); }
+.wf-count-col > span { height: 1em; }
+.wf-count-total { font-size: 16px; color: var(--text-deep); }
+
+/* Segmented progress, scrubbed by scroll */
+.wf-rail { list-style: none; display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 14px; }
+.wf-seg-track { display: block; height: 3px; border-radius: var(--r-pill); overflow: hidden; background: var(--ink-soft); }
+.wf-seg-fill {
+  display: block; height: 100%; transform: scaleX(0); transform-origin: 0 50%;
+  background: var(--sky-900);
+  will-change: transform; /* scrubbed every frame: must never trigger a repaint */
+}
+.wf-seg-label {
+  display: block; margin-top: 8px; font-size: 12px; font-weight: 700; letter-spacing: 0.02em;
+  color: color-mix(in srgb, var(--sky-900) 50%, transparent); transition: color 400ms var(--ease);
+}
+.wf-seg[data-state='after'] .wf-seg-label { color: var(--text-deep); }
+.wf-seg[data-state='active'] .wf-seg-label { color: var(--text-1); }
+
+/* Panels: the outgoing one lifts away, then the incoming one rises in */
+.wf-stage { position: relative; height: 300px; margin-top: 26px; }
+.wf-panel {
+  position: absolute; inset: 0; will-change: transform, opacity;
+  opacity: 0; transform: translate3d(0, 22px, 0);
+  transition: opacity 280ms var(--ease), transform 420ms var(--wf-glide);
+}
+.wf-panel[data-state='after'] { transform: translate3d(0, -22px, 0); }
+.wf-panel[data-state='active'] {
+  opacity: 1; transform: none;
+  transition: opacity 500ms var(--ease) 140ms, transform 700ms var(--wf-glide) 140ms;
+}
+/* Children: staggered in by --i, gone instantly on exit. Pre-promoted so a step
+   change never has to create and rasterise a batch of new layers at once. */
+.wf-in, .wf-pop, .wf-tick, .wf-bracket { will-change: transform, opacity; }
+.wf-in, .wf-pop { opacity: 0; transition: opacity 200ms var(--ease), transform 200ms var(--ease); }
+.wf-in { transform: translate3d(0, 12px, 0); }
+.wf-pop { transform: scale(0.6); }
+.wf-panel[data-state='active'] .wf-in,
+.wf-panel[data-state='active'] .wf-pop {
+  opacity: 1; transform: none;
+  transition:
+    opacity 450ms var(--ease) calc(220ms + var(--i, 0) * 75ms),
+    transform 650ms var(--wf-spring) calc(220ms + var(--i, 0) * 75ms);
+}
+
+.wf-title { font-family: var(--font-primary); font-size: clamp(30px, 2.5vw, 40px); line-height: 1.08; letter-spacing: -0.015em; color: var(--text-1); }
+.wf-sub { margin-top: 8px; font-size: 15px; line-height: 1.45; color: var(--text-2); }
+/* Light pills: the only surfaces, kept small */
+.wf-chip, .wf-fee, .wf-row, .wf-stat, .wf-code, .wf-release {
+  background: var(--pill); border: 1px solid var(--pill-edge);
+}
+.wf-chip, .wf-fee {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 12px; border-radius: var(--r-pill);
+  font-size: 13px; font-weight: 600; white-space: nowrap; color: var(--text-1);
+}
+.wf-chip { margin-top: 12px; }
+.wf-chip svg { color: var(--sky-800); }
+.wf-fee b { margin-left: auto; padding-left: 4px; color: var(--sky-800); font-weight: 800; }
+
+/* 01 Collect: fare rows land while a scan line sweeps them */
+.wf-scan { position: relative; display: grid; gap: 6px; margin-top: 16px; overflow: hidden; border-radius: var(--r-md); }
+.wf-row {
+  display: grid; grid-template-columns: 1fr auto auto 20px; align-items: center; gap: 14px;
+  padding: 8px 12px; border-radius: var(--r-md); font-size: 14px;
+}
+.wf-row.wf-in { transform: translate3d(18px, 0, 0); }
+.wf-route { font-weight: 800; letter-spacing: 0.02em; }
+.wf-time { color: var(--text-3); font-size: 13px; }
+.wf-price { font-weight: 800; }
+.wf-tick {
+  display: grid; place-items: center; width: 20px; height: 20px; border-radius: 50%;
+  background: var(--sky-900); color: var(--white);
+  transform: scale(0); transition: transform 200ms var(--ease);
+}
+.wf-panel[data-state='active'] .wf-tick { transform: scale(1); transition: transform 500ms var(--wf-spring) calc(520ms + var(--i, 0) * 120ms); }
+.wf-scanline {
+  position: absolute; left: 0; right: 0; top: 0; height: 40px; z-index: 1; pointer-events: none;
+  background: linear-gradient(180deg, transparent, color-mix(in srgb, var(--sky-500) 30%, transparent) 85%, var(--sky-500) 100%);
+  opacity: 0; transform: translate3d(0, -44px, 0);
+}
+.wf-collect[data-state='active'] .wf-scanline { animation: wf-scan 1.9s var(--ease) 300ms infinite; }
+@keyframes wf-scan {
+  0% { transform: translate3d(0, -44px, 0); opacity: 0; }
+  15% { opacity: 1; }
+  85% { opacity: 1; }
+  100% { transform: translate3d(0, 140px, 0); opacity: 0; }
+}
+
+/* 02 Unbundle: advertised price struck through, true total counts up */
+.wf-totals { display: flex; align-items: flex-end; gap: 16px; margin-top: 16px; }
+.wf-totals small { display: block; font-size: 12px; font-weight: 700; letter-spacing: 0.04em; color: var(--text-deep); margin-bottom: 4px; }
+.wf-was s { font-size: 22px; font-weight: 700; color: var(--text-2); text-decoration-color: var(--sky-900); text-decoration-thickness: 2px; }
+.wf-arrow { position: relative; width: 34px; height: 2px; margin-bottom: 18px; background: var(--sky-900); border-radius: 2px; }
+.wf-arrow::after {
+  content: ''; position: absolute; right: 0; top: 50%; width: 8px; height: 8px;
+  border-top: 2px solid var(--sky-900); border-right: 2px solid var(--sky-900);
+  transform: translate(0, -50%) rotate(45deg);
+}
+.wf-now strong { display: block; font-family: var(--font-primary); font-size: clamp(44px, 4vw, 60px); line-height: 1; color: var(--text-1); }
+.wf-fees { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 18px; }
+.wf-fees .wf-fee { transform-origin: 0 50%; }
+.wf-dot { width: 8px; height: 8px; border-radius: 50%; flex: none; }
+.wf-dot--2 { background: var(--sky-500); }
+.wf-dot--3 { background: var(--sky-800); }
+.wf-dot--4 { background: var(--sky-900); }
+.wf-dot--5 { background: var(--black); }
+.wf-note { margin-top: 14px; font-size: 15px; color: var(--text-2); }
+.wf-note b { color: var(--text-1); }
+
+/* 03 Index: two counters and a chart that draws itself */
+.wf-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 16px; }
+.wf-stat { padding: 10px 14px; border-radius: var(--r-lg); }
+.wf-stat small { display: block; font-size: 12px; font-weight: 700; color: var(--text-3); }
+.wf-stat strong { display: block; font-family: var(--font-primary); font-size: clamp(32px, 2.8vw, 40px); line-height: 1.1; }
+.wf-stat--hot { background: var(--white); }
+.wf-stat--hot strong { color: var(--sky-800); }
+.wf-chart { position: relative; height: 96px; margin-top: 18px; color: var(--sky-900); }
+.wf-chart svg { width: 100%; height: 100%; overflow: visible; }
+.wf-line { fill: none; stroke-width: 2; stroke-linejoin: round; }
+/* Left-to-right wipe: the window slides right while its content slides back left
+   by the same amount, so the lines stay put and appear to draw. Transforms only. */
+.wf-wipe, .wf-wipe-inner { position: absolute; inset: 0; transition: transform 250ms var(--ease); }
+.wf-wipe { overflow: hidden; transform: translate3d(-100%, 0, 0); will-change: transform; }
+.wf-wipe-inner { transform: translate3d(100%, 0, 0); will-change: transform; }
+.wf-index[data-state='active'] .wf-wipe,
+.wf-index[data-state='active'] .wf-wipe-inner { transform: none; transition: transform 1300ms var(--wf-glide) 350ms; }
+.wf-line--fare { stroke: color-mix(in srgb, var(--sky-900) 45%, transparent); }
+.wf-line--paid { stroke: var(--sky-900); stroke-width: 3; }
+.wf-area { opacity: 0.6; }
+.wf-gap {
+  position: absolute; right: 14px;
+  padding: 4px 10px; border-radius: var(--r-pill);
+  background: var(--sky-900); color: var(--white);
+  font-size: 12px; font-weight: 800; white-space: nowrap;
+}
+.wf-gap.wf-pop { transform: translate3d(0, -50%, 0) scale(0.6); transform-origin: 100% 50%; }
+/* Bracket spanning the two line ends: the hidden gap, drawn */
+.wf-bracket {
+  position: absolute; right: 0; width: 7px;
+  border: 2px solid var(--sky-900); border-left: 0; border-radius: 0 4px 4px 0;
+  transform: scaleY(0); transform-origin: 50% 0; transition: transform 200ms var(--ease);
+}
+.wf-index[data-state='active'] .wf-bracket { transform: none; transition: transform 500ms var(--wf-glide) 1450ms; }
+/* Head of the you-pay line */
+.wf-end {
+  position: absolute; right: 0; width: 11px; height: 11px; margin: -5.5px -5.5px 0 0; border-radius: 50%;
+  background: var(--sky-900); box-shadow: 0 0 0 4px var(--pill);
+}
+.wf-index[data-state='active'] .wf-end.wf-pop { transition-delay: 1450ms, 1450ms; }
+.wf-index[data-state='active'] .wf-gap.wf-pop {
+  transform: translate3d(0, -50%, 0);
+  transition: opacity 450ms var(--ease) 1550ms, transform 650ms var(--wf-spring) 1550ms;
+}
+
+/* 04 Publish: release goes live, formats snap in, endpoint types out */
+.wf-release {
+  display: flex; align-items: center; gap: 14px; margin-top: 16px; padding: 14px 16px;
+  border-radius: var(--r-lg);
+}
+.wf-release b { display: block; font-size: 16px; }
+.wf-release small { display: block; font-size: 13px; color: var(--text-2); }
+.wf-pulse { position: relative; flex: none; width: 10px; height: 10px; border-radius: 50%; background: var(--sky-500); }
+.wf-stamp {
+  display: grid; place-items: center; flex: none; margin-left: auto;
+  width: 32px; height: 32px; border-radius: 50%;
+  background: var(--sky-900); color: var(--white);
+}
+.wf-formats { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.wf-formats .wf-fee svg { color: var(--sky-800); }
+.wf-code {
+  display: flex; align-items: center; margin-top: 12px; padding: 10px 14px; border-radius: var(--r-md);
+  font-family: ui-monospace, 'SFMono-Regular', Consolas, monospace; font-size: 13px; color: var(--sky-900);
+}
+.wf-type { white-space: nowrap; overflow: hidden; clip-path: inset(0 100% 0 0); transition: clip-path 150ms linear; }
+.wf-publish[data-state='active'] .wf-type { clip-path: inset(0 0 0 0); transition: clip-path 1100ms steps(var(--chars)) 900ms; }
+.wf-caret { width: 8px; height: 15px; margin-left: 2px; background: var(--sky-900); opacity: 0; }
+.wf-publish[data-state='active'] .wf-caret { animation: wf-blink 1s steps(1) infinite; }
+@keyframes wf-blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
 
 @media (max-width: 760px) {
-  .fly-breakdown { top: 30%; left: var(--gutter); font-size: 15px; }
   .fly-plane { width: clamp(80px, 16vmin, 120px); }
-  .fly-cloud { filter: blur(2px); }
+  .fly-card {
+    align-items: flex-start;
+    padding: calc(var(--header-top) + var(--header-h) + 16px) var(--gutter) 0;
+  }
+  .wf { width: 100%; }
+  .wf-title { font-size: 28px; }
+  .wf-stage { height: 280px; }
+  .wf-count-roll { font-size: 34px; }
 }
 
 /* ---------- responsive */
