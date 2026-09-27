@@ -82,6 +82,9 @@ export const SiteFooter: React.FC = () => (
           Back to top <ArrowUp size={14} aria-hidden="true" />
         </a>
       </div>
+      <p className="foot-asset-credit">
+        Aircraft model: <a href="https://airbornescience.nasa.gov/content/3D_Models_Gallery" target="_blank" rel="noreferrer">NASA Airborne Science Program</a>. NASA does not endorse AeroFareX.
+      </p>
     </div>
   </footer>
 );

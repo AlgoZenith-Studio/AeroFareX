@@ -47,10 +47,10 @@
   --r-sm: 8px; --r-md: 12px; --r-lg: 16px; --r-xl: 24px; --r-pill: 999px;
   --container: 1240px;
   --gutter: clamp(20px, 4vw, 40px);
-  --header-h: 76px;
+  --header-h: 64px;
   --header-top: 16px;
   --logo-h: 50px;
-  --header-inset: 14px;
+  --header-inset: 12px;
   --section-y: clamp(72px, 9vw, 128px);
   --ease: cubic-bezier(0.2, 0.7, 0.2, 1);
   --dur: 200ms;
@@ -149,10 +149,10 @@ h1, h2, h3, h4, .hero-title, .h2, .trust-item strong, .ed-box-num, .gap-giant, .
   position: fixed; top: var(--header-top); left: 0; right: 0; z-index: 50;
   pointer-events: none;
 }
-.header-shell { position: relative; }
+.header-shell { position: relative; max-width: 1160px; }
 .header-bar {
   pointer-events: auto;
-  height: var(--header-h);
+  height: 60px;
   display: flex; align-items: center; justify-content: space-between; gap: var(--s-6);
   padding: 0 var(--header-inset) 0 var(--s-6);
   border-radius: var(--r-pill);
@@ -203,17 +203,24 @@ h1, h2, h3, h4, .hero-title, .h2, .trust-item strong, .ed-box-num, .gap-giant, .
   display: flex; align-items: center;
   padding: calc(var(--header-top) + var(--header-h) + var(--s-7)) 0 var(--s-9);
 }
-.hero-media { position: absolute; inset: 0; z-index: -1; background: var(--hero-fallback); }
-.hero-video {
-  position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover;
-  opacity: 0; transition: opacity 700ms var(--ease);
-  transform: translateZ(0); backface-visibility: hidden; /* own GPU layer, smoother playback */
+.hero-media {
+  position: absolute; inset: 0; z-index: -1;
+  background: #00607a url('/hero-sky-cloud-deck.webp') center / cover no-repeat;
 }
-.hero-video.is-ready { opacity: 1; }
-/* Dark tint behind the text, fading out so the footage stays crisp on the right */
-.hero-scrim { position: absolute; inset: 0; background: var(--scrim-hero); }
+.hero-scene-canvas {
+  position: absolute; inset: 0; width: 100%; height: 100%; display: block;
+}
+.hero-scene-canvas { pointer-events: none; }
+/* The dark lower edge joins the ink sky at the start of the flight section. */
+.hero-handoff { position: absolute; inset: 0; background: linear-gradient(180deg, transparent 75%, var(--ink) 100%); }
+/* Keep the headline legible over the sky image. */
+.hero-scrim {
+  position: absolute; inset: 0;
+  background: linear-gradient(90deg, rgba(2, 35, 48, 0.7), rgba(2, 35, 48, 0.45) 48%, rgba(2, 35, 48, 0.08) 72%);
+}
 
 .hero-copy { max-width: 660px; }
+.hero > .container { position: relative; z-index: 2; }
 .hero-title {
   font-size: var(--fs-display); line-height: 1.06; letter-spacing: -0.015em;
   margin-bottom: var(--s-5); text-shadow: var(--text-shadow-dark);
@@ -237,6 +244,11 @@ h1, h2, h3, h4, .hero-title, .h2, .trust-item strong, .ed-box-num, .gap-giant, .
 }
 /* two rows, each on one line (phones may wrap, see responsive rules) */
 .hero .hero-row { display: block; white-space: nowrap; padding-right: 0.08em; }
+.hero .hero-row:last-child {
+  transform: translate3d(calc(var(--hero-text-wake, 0) * 8px), 0, 0);
+  opacity: calc(1 - var(--hero-text-wake, 0) * 0.48);
+  filter: blur(calc(var(--hero-text-wake, 0) * 0.8px));
+}
 /* accent words ("real cost"): solid lightest sky from brand.css, no gradient */
 .hero .hero-title .grad {
   font-family: inherit; font-style: normal; font-weight: inherit; padding: 0; margin: 0;
@@ -262,8 +274,9 @@ h1, h2, h3, h4, .hero-title, .h2, .trust-item strong, .ed-box-num, .gap-giant, .
   :root { --header-h: 64px; --header-top: 10px; --logo-h: 38px; }
   .header-bar { padding: 0 var(--header-inset) 0 var(--s-5); }
   :root { --header-inset: 10px; }
-  .hero-scrim { background: var(--scrim-hero-mobile); }
-  .hero .hero-title { font-size: clamp(40px, 12vw, 64px); }
+  .hero-scrim { background: linear-gradient(180deg, rgba(5, 8, 12, 0.55) 0%, rgba(5, 8, 12, 0.76) 55%, rgba(5, 8, 12, 0.28) 78%, rgba(5, 8, 12, 0.25) 100%); }
+  .hero-handoff { background: linear-gradient(180deg, transparent 88%, var(--ink) 100%); }
+  .hero .hero-title { width: auto; max-width: 100%; font-size: clamp(34px, 10vw, 48px); }
   .hero .hero-row { white-space: normal; }
   .hero-ctas .btn { flex: 1 1 auto; }
 }
@@ -284,7 +297,7 @@ h1, h2, h3, h4, .hero-title, .h2, .trust-item strong, .ed-box-num, .gap-giant, .
 .manifesto-title {
   display: flex; flex-direction: column; align-items: center; text-align: center;
   font-size: clamp(54px, 10.5vw, 188px);
-  line-height: 0.9; letter-spacing: -0.025em;
+  line-height: 1; row-gap: 0.1em; letter-spacing: -0.025em;
   color: var(--text-1);
 }
 .manifesto-title span { display: block; }
@@ -561,13 +574,20 @@ h1, h2, h3, h4, .hero-title, .h2, .trust-item strong, .ed-box-num, .gap-giant, .
   padding-top: var(--s-5); font-size: var(--fs-xs); letter-spacing: 0.04em; color: var(--text-3);
 }
 .foot-bottom > :last-child { justify-self: end; }
+.foot-asset-credit { margin: var(--s-3) 0 0; color: var(--text-3); font-size: var(--fs-xs); text-align: center; }
+.foot-asset-credit a { color: var(--text-2); text-decoration: underline; text-underline-offset: 3px; }
 .foot-top-link { display: inline-flex; align-items: center; gap: var(--s-1); color: var(--text-2); transition: color var(--dur) var(--ease); }
 .foot-top-link:hover { color: var(--text-1); }
 
 /* ---------- scroll transition (hero -> manifesto) */
 /* margin-bottom:-100vh lets the next section slide up OVER the pinned stage for the
    last screen of travel, so there is no empty sky after the plane has gone */
-.fly { --p: 0; position: relative; height: 200vh; margin-bottom: -100vh; background: var(--ink); }
+.fly {
+  --p: 0; --plane-x: -8; --plane-y: 60; --plane-angle: 0deg;
+  --plane-scale: 0.86; --plane-opacity: 0; --route-progress-left: 0; --route-progress-right: 0; --route-opacity: 0;
+  --merge: 0; --base-opacity: 0; --tax-opacity: 0; --fee-opacity: 0; --total-opacity: 0;
+  position: relative; height: 200vh; margin-bottom: -100vh; background: var(--ink);
+}
 .fly-stage { position: sticky; top: 0; height: 100vh; height: 100svh; overflow: hidden; isolation: isolate; }
 /* Sky climbs from ink (matches hero) to sky-400 (matches the manifesto) */
 .fly-sky {
@@ -576,46 +596,70 @@ h1, h2, h3, h4, .hero-title, .h2, .trust-item strong, .ed-box-num, .gap-giant, .
   background-size: 100% 400%;
   background-position: 50% calc(var(--p) * 100%);
 }
+.fly-route { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; opacity: var(--route-opacity); }
+.fly-route path {
+  fill: none; stroke: url(#fly-vapor-fade); stroke-linecap: round;
+  stroke-dasharray: 1;
+}
+.fly-route-track--left path { stroke-dashoffset: calc(1 - var(--route-progress-left)); }
+.fly-route-track--right path { stroke-dashoffset: calc(1 - var(--route-progress-right)); }
+.fly-vapor-haze { stroke-width: 3; opacity: 0.42; filter: blur(12px); }
+.fly-vapor-body { stroke-width: 0.9; opacity: 0.65; filter: url(#fly-vapor-texture); }
 .fly-video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; }
 .fly[data-mode='video'] .fly-video { opacity: 1; }
 .fly[data-mode='video'] .fly-clouds,
-.fly[data-mode='video'] .fly-plane { display: none; }
+.fly[data-mode='video'] .fly-route,
+.fly[data-mode='video'] .fly-plane,
+.fly[data-mode='video'] .fly-breakdown { display: none; }
 
-/* Clouds drift DOWN as progress rises, so the plane reads as climbing UP */
+/* Clouds move opposite the plane, at different depths. */
 .fly-clouds { position: absolute; inset: 0; }
 .fly-cloud {
-  position: absolute; border-radius: 50%;
-  background: radial-gradient(closest-side, var(--white), transparent);
-  opacity: var(--o); filter: blur(6px); will-change: transform;
-  transform: translate3d(0, calc(var(--p) * var(--speed) * 1vh), 0);
+  position: absolute; display: block; height: auto;
+  filter: blur(2px); will-change: transform;
 }
 .fly-plane {
-  position: absolute; left: 50%; top: 50%;
-  width: clamp(140px, 24vmin, 300px);
-  color: var(--white); will-change: transform;
+  position: absolute;
+  left: calc(var(--plane-x) * 1%); top: calc(var(--plane-y) * 1%);
+  width: clamp(90px, 13vmin, 160px);
+  color: var(--white); opacity: var(--plane-opacity); will-change: transform;
   filter: drop-shadow(var(--shadow-dark));
-  /* Straight vertical climb on the centre line (x never changes): starts just
-     below the bottom edge so it is visible from the first scroll, passes the
-     centre, exits above; grows as it passes. */
-  transform:
-    translate(-50%, -50%)
-    translate3d(0, calc((55 - var(--p) * 164) * 1vh), 0)
-    scale(calc(0.7 + var(--p) * 0.9));
+  transform: translate(-50%, -50%) rotate(var(--plane-angle)) scale(var(--plane-scale));
   transform-origin: 50% 50%;
 }
-.fly-plane-svg { position: relative; width: 100%; height: auto; }
-.fly-trail {
-  position: absolute; top: 55%; width: 3px; border-radius: 3px;
-  height: calc(10vh + var(--p) * 90vh);
-  background: linear-gradient(180deg, var(--white), transparent);
-  opacity: 0.75;
+.fly-plane-model { position: relative; width: 100%; aspect-ratio: 5 / 6; }
+.fly-plane-model canvas, .fly-plane-svg { position: absolute; inset: 0; display: block; width: 100%; height: 100%; }
+.fly-plane-model.is-ready .fly-plane-svg { display: none; }
+.fly-breakdown {
+  --fee-step: 58px;
+  position: absolute; top: 28%; left: clamp(28px, 10vw, 170px);
+  width: clamp(170px, 20vw, 270px); height: calc(var(--fee-step) * 3);
+  color: var(--white); font-size: clamp(15px, 1.2vw, 19px); font-weight: 700;
+  pointer-events: none;
 }
-.fly-trail--l { left: 24.5%; }
-.fly-trail--r { left: 74.5%; }
+.fly-fee {
+  position: absolute; left: 0; display: inline-block;
+  padding: 6px 14px; border: 1px solid var(--dark-line); border-radius: var(--r-pill);
+  background: var(--dark-glass-strong); white-space: nowrap;
+}
+.fly-fee--base { top: 0; opacity: var(--base-opacity); transform: translateY(calc(var(--merge) * var(--fee-step))); }
+.fly-fee--tax { top: var(--fee-step); opacity: var(--tax-opacity); }
+.fly-fee--fee { top: calc(var(--fee-step) * 2); opacity: var(--fee-opacity); transform: translateY(calc(var(--merge) * var(--fee-step) * -1)); }
+.fly-fee--total {
+  top: var(--fee-step); opacity: var(--total-opacity); background: var(--ink);
+  border-color: var(--sky-400); box-shadow: 0 0 20px var(--dark-glass);
+  transform: scale(calc(0.9 + var(--total-opacity) * 0.1));
+}
 /* Seamless joins: solid ink at the start, solid sky-400 at the end */
 .fly-fade { position: absolute; inset: 0; pointer-events: none; }
 .fly-fade--in { background: var(--ink); opacity: clamp(0, calc(1 - var(--p) * 9), 1); }  /* short lead-in */
 .fly-fade--out { background: var(--sky-400); opacity: clamp(0, calc((var(--p) - 0.82) * 5.6), 1); }
+
+@media (max-width: 760px) {
+  .fly-breakdown { top: 30%; left: var(--gutter); font-size: 15px; }
+  .fly-plane { width: clamp(80px, 16vmin, 120px); }
+  .fly-cloud { filter: blur(2px); }
+}
 
 /* ---------- responsive */
 @media (max-width: 1080px) {

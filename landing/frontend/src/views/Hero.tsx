@@ -1,10 +1,10 @@
 import React from 'react';
 import { ArrowRight } from 'lucide-react';
-import { HeroVideo } from '../components/HeroVideo';
+import { HeroScene } from '../components/HeroScene';
 
 export const Hero: React.FC = () => (
   <section className="hero theme-dark" id="top" aria-labelledby="hero-title">
-    <HeroVideo />
+    <HeroScene />
 
     <div className="container">
       <div className="hero-copy">
