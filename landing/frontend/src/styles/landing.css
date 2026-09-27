@@ -389,6 +389,8 @@ h1, h2, h3, h4, .hero-title, .h2, .trust-item strong, .ed-box-num, .gap-giant, .
 .ed-title {
   font-size: clamp(40px, 5.4vw, 92px); line-height: 0.95; letter-spacing: -0.02em;
   margin-top: clamp(32px, 4vw, 64px); max-width: 14ch;
+  /* At this size the shared 0.06em word-spacing reads as touching; widen it here. */
+  word-spacing: 0.18em;
 }
 .ed-lead { font-size: clamp(18px, 1.5vw, 24px); line-height: 1.35; color: var(--text-2); max-width: 36ch; }
 .ed-head .ed-lead { justify-self: end; padding-bottom: 6px; }
