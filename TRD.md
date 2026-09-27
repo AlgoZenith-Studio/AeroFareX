@@ -1,75 +1,57 @@
 # AeroFareX: Real-time Airfare Price Index for India
-## Technical Requirements & Build Specification Document (TRD) · Version 2.1
+## Technical Requirements & Build Specification Document (TRD) · Version 2.2
 **Project:** AeroFareX  
-**Companions:** AeroFareX PRD v2.1  
+**Companions:** AeroFareX PRD v2.2 · `Project_context.md` (living build log, read it first)  
+**Last updated:** 2026-09-28
+
+> **What changed in v2.2:** database is **SQLite** (not PostgreSQL/TimescaleDB); backend runs as **one Railway service**; frontends and identity on **Firebase**; the analyst dashboard has **one role (analyst)**; the landing site gained a **public fare checker with optional traveller accounts**; the collector stack is **Scrapy + Scrapling** with a browser only where a source requires a session. Sections below are updated accordingly; Part B (methodology) is unchanged.
+
 **Stack Architecture:**
-- **Public Citizen Landing Surface (`landing/`):**
-  - **Frontend (`landing/frontend`):** Lightweight Next.js / Vite, TypeScript, Tailwind CSS (bound to `packages/design-tokens`), citizen fare widget, public methodology.
-  - **Backend (`landing/backend`):** FastAPI (Python 3.11+), Pydantic v2, in-memory/Redis cached public endpoints (`/api/v1/public/*`), zero authentication barrier.
-- **Sovereign Analyst & Econometric Platform (`dashboard/`):**
-  - **Frontend (`dashboard/frontend`):** Next.js 18+ App Router (`src/app`), TypeScript, Tailwind CSS, Framer Motion, Firebase Auth SDK (RBAC: VIEWER, ANALYST, ADMIN), Accessible DataTables.
-  - **Backend (`dashboard/backend/server`):** FastAPI (Python 3.11+), Pydantic v2, NumPy, Pandas, Scipy, Statsmodels, SQLAlchemy / Asyncpg, Firebase Admin SDK.
-- **Data & Ingestion Engine (`services/collector`):** Python/Playwright/curl_cffi direct API adapters, Rate-limited ethical scraper (3.5s jittered delays, circuit breakers).
-- **Databases & Cloud Storage:** PostgreSQL 16 with TimescaleDB extension, Firebase Cloud Storage (Raw artifacts), Cloud Firestore (Live health & telemetry).
+- **Public Landing Site (`landing/`):**
+  - **Frontend (`landing/frontend`):** Vite 8 + React 19 + React Router 7, TypeScript, plain CSS bound to `packages/design-tokens` (no Tailwind here), Three.js 3D hero aircraft, Lenis smooth scroll. Pages: `/` (home), `/fares` (fare checker), `/account` (traveller profile). Firebase Auth + Firestore for optional traveller accounts.
+  - **Backend:** the public read-only API (`/api/v1/public/*`) is a router inside the single backend service (see Part H). `landing/backend` holds its code package.
+- **Analyst Platform (`dashboard/`):**
+  - **Frontend (`dashboard/frontend`):** Next.js 16 App Router (`src/app`, static export), React 19, TypeScript, Tailwind CSS v4 with the design-token preset, TanStack Query, hand-built SVG charts (d3-scale / d3-shape), Firebase Auth (analyst role claim). Runs fully on mock data via `NEXT_PUBLIC_USE_MOCK=true`.
+  - **Backend (`dashboard/backend/server`):** FastAPI (Python 3.11+), Pydantic v2, NumPy/Pandas/SciPy/Statsmodels, SQLAlchemy (SQLite), Firebase Admin SDK for token verification. Deployed as routers of the single backend service.
+- **Data & Ingestion Engine (`services/collector`):** Python; Scrapy (scheduling conventions, per-domain rate limits, retries, pipelines) + Scrapling selectors for HTML-only sources; plain-HTTP replay of each source's own fare request wherever permitted; Playwright only to obtain a session for sources that require one. Declared, rate-limited, never evasive (3.5 s jittered delay, circuit breakers).
+- **Data stores:** SQLite (WAL mode, STRICT tables, append-only triggers) on a Railway volume, backed up by Railway volume backups + Litestream to Firebase Storage; Firebase Cloud Storage for raw artifacts (append-only, hashed); Cloud Firestore for live collector health and traveller data.
+- **Hosting:** Firebase Hosting (both frontends) · Railway (one backend service `aerofarex-core`).
 
 ---
 
 ## Part A · System Architecture & Tech Stack
 
 ```
-   ┌────────────────────────────────────────────────────────┐
-   │            Public Citizens & General Fliers            │
-   └───────────────────────────┬────────────────────────────┘
-                               │ HTTP / HTTPS
-                               ▼
-   ┌────────────────────────────────────────────────────────┐
-   │          landing/frontend (Public Next.js)             │
-   │  • Headline AFI & TCT-AFI Widget (+12.6% Drip Gap)     │
-   │  • Public Methodology & Citizen Fare Comparison        │
-   └───────────────────────────┬────────────────────────────┘
-                               │ REST / CORS
-                               ▼
-   ┌────────────────────────────────────────────────────────┐
-   │          landing/backend (FastAPI Public Cache)        │
-   │  • GET /api/v1/public/latest                           │
-   │  • GET /api/v1/public/methodology                      │
-   └────────────────────────────────────────────────────────┘
-
-                               ══════════════════════════════════════════════════════════════════
-
-                               ┌─────────────────────────────────────────┐
-                               │       Firebase Auth (JWT + RBAC)        │
-                               │    Roles: VIEWER | ANALYST | ADMIN      │
-                               └────────────────────┬────────────────────┘
-                                                    │
-                 ┌──────────────────────────────────┴──────────────────────────────────┐
-                 ▼                                                                     ▼
-   ┌───────────────────────────┐      HTTP REST / Bearer JWT            ┌─────────────────────────────┐
-   │    dashboard/frontend     ├───────────────────────────────────────►│      dashboard/backend      │
-   │ Next.js App Router (src/) │                                        │ (FastAPI server/ package)   │
-   │ Framer Motion Animations  │◄───────────────────────────────────────┤ Econometric Index Engine    │
-   │ Accessible DataTables     │      Standard Response Envelope        │ Chained Laspeyres & Hedonic │
-   └─────────────┬─────────────┘                                        └──────────────┬──────────────┘
-                 │                                                                     │
-                 │ Firestore onSnapshot                                                │ Asyncpg Pool
-                 ▼                                                                     ▼
-   ┌───────────────────────────┐                                        ┌─────────────────────────────┐
-   │      Cloud Firestore      │                                        │   TimescaleDB (PostgreSQL)  │
-   │ • Live Scraper Health     │                                        │ • Hypertable: observations  │
-   │ • Circuit Breaker States  │                                        │ • Hypertable: snapshots     │
-   │ • Real-time Surge Alerts  │                                        │ • Integer paise everywhere  │
-   └─────────────▲─────────────┘                                        └──────────────▲──────────────┘
-                 │                                                                     │
-                 │ Health Updates                                                      │ Structured Writes
-                 │                                                                     │
-   ┌─────────────┴─────────────────────────────────────────────────────────────────────┴──────────────┐
-   │                           services/collector (Ingestion Engine)                                  │
-   │ • Scheduled Runs: 02:30, 05:30, 13:00, 19:00 IST                                                 │
-   │ • Declared Scraping Adapters: IndiGo, Air India, Akasa, SpiceJet, MakeMyTrip                     │
-   │ • 3.5s Jittered Delays & Circuit Breaker Logic (HEALTHY -> DEGRADED -> OPEN -> RECOVERING)       │
-   │ • Hash-chained Batches & Raw Artifacts pushed to Firebase Storage (gs://aerofarex-raw-observations) │
-   └──────────────────────────────────────────────────────────────────────────────────────────────────┘
+                 Public travellers                          Analysts (NSO · RBI · DGCA · MoCA)
+                        │                                                 │
+                        ▼                                                 ▼
+   ┌──────────────────────────────────────┐        ┌──────────────────────────────────────────┐
+   │ landing/frontend  (Firebase Hosting)  │        │ dashboard/frontend  (Firebase Hosting)    │
+   │  /         home, 3D hero, index story │        │  Next.js 16 static export                 │
+   │  /fares    fare checker (5 free       │ Analyst│  Overview · Attribution · Routes ·        │
+   │            guest searches, then sign) │ access │  Lead time · Quality · Source health ·    │
+   │  /account  history, saved routes,     ├───────►│  Methodology                              │
+   │            delete data / account      │ link   │  Login + "Request access" (pending until  │
+   └───────────┬──────────────────┬────────┘        │  an admin grants the analyst role)        │
+               │ REST (public)    │ Firebase Auth   └──────┬───────────────────┬───────────────┘
+               │                  │ + Firestore            │ REST + Bearer JWT │ Firebase Auth
+               ▼                  ▼ users/{uid}/…          ▼ (role=ANALYST)    ▼ Firestore health
+   ┌─────────────────────────────────────────────────────────────────────────────────────────┐
+   │ Railway service "aerofarex-core"  (FastAPI, single instance, volume at /data)             │
+   │   /api/v1/public/*   public, cached, read-only                                           │
+   │   /api/v1/*          analyst routers, Firebase token + role check on every request       │
+   │   scheduler (APScheduler, Asia/Kolkata): collect 02:30 · 05:30 · 13:00 · 19:00 IST,      │
+   │                                          publish index ~20:00 IST                        │
+   │   collector: fetch → raw archive → parse → validate → SQLite                             │
+   │   /data/aerofarex.db  SQLite (WAL, STRICT, append-only triggers)                          │
+   └───────────────┬────────────────────────────────────────────────────┬────────────────────┘
+                   │ raw payloads (SHA-256, batch hash chain)             │ health metrics
+                   ▼                                                      ▼
+        Firebase Cloud Storage (append-only)                   Cloud Firestore (sources/, alerts/)
+        + Litestream DB replica / nightly snapshot
 ```
+
+**Why one backend service:** SQLite is a single file on one Railway volume; a volume attaches to one service only. So the API routers, scheduler and collector run in one process that owns the database. If load ever requires multiple instances, switch `DATABASE_URL` to Postgres (SQLAlchemy keeps this a config change).
 
 ---
 
@@ -117,61 +99,30 @@ $$\Delta I_t = \sum_{r \in R} \delta_r = \sum_{c \in C} \delta_c = \sum_{k \in K
 ## Part C · Design Tokens & UI Component Specifications
 
 ### 1. Color Palette & Semantic Tokens
-Defined once as CSS custom properties in `tokens.css` and mapped to Tailwind utilities:
+**Single source of truth:** `packages/design-tokens/brand.css` (brand palette + semantic roles), with `tokens.css` (dashboard/data-viz layer, imports brand.css), `brand.ts` (TS mirror) and `tailwind-preset.js`. **No colour literal may appear in any component or app stylesheet.** Full guide: `packages/design-tokens/README.md` and `AI_COWORKER/shared_memory/design/DESIGN_SYSTEM.md`.
 
-```css
-:root {
-  /* Surfaces & Ink */
-  --page: #f9f9f7;
-  --surface: #fcfcfb;
-  --surface-raised: #ffffff;
-  --brand: #12304a;          /* Top bar chrome only; never a data mark */
-  --brand-accent: #0b6e8f;   /* Links, active nav indicator, focus rings */
-  --text-primary: #0b0b0b;
-  --text-secondary: #52514e;
-  --text-muted: #898781;
-  --grid: #e1e0d9;
-  --axis: #c3c2b7;
-  --border: rgba(11, 11, 11, 0.10);
+Brand palette ("Vivid Sky Blue" + black/white):
 
-  /* Categorical Series (Fixed Slot Order - Never Recycled) */
-  --slot-1: #2a78d6;  /* Blue: AFI Headline / IndiGo */
-  --slot-2: #eb6834;  /* Orange: TCT-AFI / Air India */
-  --slot-3: #1baf7a;  /* Aqua: AFI uncorrected / Akasa Air */
-  --slot-4: #eda100;  /* Yellow: ANC-AFI / SpiceJet */
-  --slot-5: #e87ba4;  /* Magenta: MakeMyTrip */
+| Token | Hex | Use |
+| :--- | :--- | :--- |
+| `--sky-100` | `#f5fdff` | Page canvas, alternating bands |
+| `--sky-200` | `#d6f7ff` | Tints, selected states, pale cards |
+| `--sky-300` | `#a8eeff` | Borders, secondary marks |
+| `--sky-400` | `#6ce2ff` | Editorial band, highlighted card (black text on it) |
+| `--sky-500` | `#00ccff` | Primary buttons and fills (black text on it) |
+| `--sky-600` | `#0096c7` | **New in v2.2.** Chart lines/marks (sky-500 fails the chart lightness band and is 1.9:1 on white) |
+| `--sky-800` | `#00607a` | Blue text/links on light (6.7:1) |
+| `--sky-900` | `#002b38` | Rules, labels on sky bands |
+| `--ink` / `--black` / `--white` | | Dark base / text / cards |
 
-  /* Status Colors (Never reused as series lines) */
-  --status-good: #0ca30c;
-  --status-warning: #fab219;
-  --status-serious: #ec835a;
-  --status-critical: #d03b3b;
+Data-viz layer (`tokens.css`):
+- Categorical slots (fixed entity binding, never recycled): `--slot-1` = `--sky-600` (AFI / IndiGo), `--slot-2` `#eb6834` (TCT-AFI / Air India), `--slot-3` `#1baf7a` (Akasa), `--slot-4` `#eda100` (ANC-AFI / SpiceJet), `--slot-5` `#e87ba4` (MakeMyTrip). Validated with the dataviz palette validator (lightness band, chroma, CVD separation, normal-vision floor).
+- Diverging (waterfalls, period change): `--diverge-up` `#d0582a`, `--diverge-down` = `--sky-600`, `--diverge-mid` = `--line-control` (neutral zero).
+- Status (never series colours, always icon + label): `--status-good` `#0ca30c`, `--status-warning` `#fab219`, `--status-serious` `#ec835a`, `--status-critical` `#d03b3b`.
 
-  /* Typography & Elevation */
-  --r-sm: 4px; --r-md: 8px; --r-lg: 12px; --r-pill: 999px;
-  --e-1: 0 1px 2px rgba(11, 11, 11, 0.06);
-  --e-2: 0 4px 12px rgba(11, 11, 11, 0.10);
-  --e-3: 0 12px 32px rgba(11, 11, 11, 0.16);
-  --dur-fast: 120ms; --dur-base: 200ms;
-}
+Typography (both apps): **AFX Serif** (Anthropic Serif Display Bold) for headings and big numbers, its ExtraBold Italic for emphasis, **Google Sans** for everything else, JetBrains Mono for hashes. Landing hero headline uses Valty (demo licence, confirm before launch).
 
-[data-theme='dark'] {
-  --page: #0d0d0d;
-  --surface: #1a1a19;
-  --surface-raised: #242423;
-  --text-primary: #ffffff;
-  --text-secondary: #c3c2b7;
-  --text-muted: #898781;
-  --grid: #2c2c2a;
-  --axis: #383835;
-  --border: rgba(255, 255, 255, 0.10);
-  --slot-1: #3987e5;
-  --slot-2: #d95926;
-  --slot-3: #199e70;
-  --slot-4: #c98500;
-  --slot-5: #d55181;
-}
-```
+Dashboard look: pale sky canvas, white 22 px-radius cards, one highlighted sky-400 card with black text, pale sky-200 accent cards, sky-500 primary buttons with black text. Landing look: editorial bands, 1.5 px ruled square panels (`--line-deep`), offset sky-block shadow for "best" items. Both honour fluid type (`clamp`) so the layout scales with browser zoom.
 
 ### 2. Seven Non-Negotiable Frontend Rules
 1. **No Dual-Axis Charts Anywhere:** Multiple series must share a single Y-axis or be converted into two separate stacked charts.
@@ -179,227 +130,210 @@ Defined once as CSS custom properties in `tokens.css` and mapped to Tailwind uti
 3. **Neutral Grey Midpoint on Diverging Ramps:** Used only where zero-crossing occurs (waterfalls, period change). Never place a distinct hue at zero.
 4. **Accessible Table View on Every Chart:** Every `ChartFrame` provides a toggle switch producing a semantic, sortable `DataTable`.
 5. **Mandatory Quality Metadata:** Every published index number is accompanied by a `QualityBadge`. If coverage $< 90\%$, a serious status band is rendered.
-6. **Explicit Texture for Simulated Data:** Records with `provenance == SIMULATED` render with a 45° tone-on-tone hatch pattern.
+6. **Explicit Texture for Simulated Data:** Records with `provenance == SIMULATED` render with a 45° tone-on-tone hatch pattern, and time series draw a `provenance_boundary` rule.
 7. **Integer Paise Throughout:** Money values are strictly represented in integer paise ($1\text{ INR} = 100\text{ paise}$) to eliminate float reconciliation glitches.
+
+Every data-bearing component implements five states: **Loading** (skeleton), **Empty** (states why), **Error** (retry, no invented values), **Partial** (coverage < 90% band), **Stale** (older than one publication cycle).
 
 ---
 
 ## Part D · API Contracts & Endpoint Specifications
 
-Base URL: `/api/v1`  
-All responses follow the standard envelope:
+Base URL: `/api/v1` (one service, see Part H). All responses follow the standard envelope:
 ```json
 {
   "data": [ ... ],
-  "meta": {
-    "page": 1,
-    "page_size": 50,
-    "total": 1284,
-    "generated_at": "2026-09-21T02:47:11Z"
-  }
+  "meta": { "page": 1, "page_size": 50, "total": 1284, "generated_at": "2026-09-21T02:47:11Z" }
 }
 ```
+Errors: `{ "error", "code", "message", "correlation_id" }`. TypeScript contracts: `packages/shared-types/index.ts` (the dashboard mock layer implements them exactly; the FastAPI Pydantic schemas must match field for field).
 
-### Key Endpoints
+### 1. Public Endpoints (no auth, CDN/in-memory cached)
+- `GET /api/v1/public/latest?series={AFI|TCT-AFI}`: headline numbers and the drip-pricing gap.
+- `GET /api/v1/public/methodology`: plain-language methodology.
+- `GET /api/v1/public/routes/summary`: five-route advertised vs total comparison.
+- `GET /api/v1/public/fares/search?from=DEL&to=BOM&date=YYYY-MM-DD`: **new in v2.2**, powers `/fares`. Returns flights on the tracked route with one offer per platform (airline site, OTAs), each split into `advertised_paise`, `fuel_paise`, `airport_paise`, `gst_paise`, `platform_paise`, `total_paise`, plus `by_days_ahead` (cheapest total at T+1/7/15/30/45) and `seen_at`. Untracked routes return `404 ROUTE_NOT_TRACKED`. Mock implementation: `landing/frontend/src/data/fares.ts` (`searchFares`).
 
-#### 1. Public Landing Endpoints (`landing/backend` — Port 8001, Public CDN-cached)
-- `GET /api/v1/public/latest?series={AFI|TCT-AFI}` (Role: Public — Headline numbers & drip-pricing wedge for citizen hero)
-- `GET /api/v1/public/methodology` (Role: Public — Plain-language methodology explainer)
-- `GET /api/v1/public/routes/summary` (Role: Public — 5-trunk sector fare comparison)
+Traveller history and saved routes are **not** served by this API: the landing site reads/writes them directly in Firestore under `users/{uid}/…`, protected by `infra/firebase/firestore.rules`.
 
-#### 2. Sovereign Analyst Portal Endpoints (`dashboard/backend` — Port 8000, JWT + RBAC)
-- `GET /api/v1/index/latest?series={AFI|TCT-AFI|ANC-AFI}` (Role: VIEWER+)
-- `GET /api/v1/index/history?series=AFI,TCT-AFI&from=YYYY-MM-DD&to=YYYY-MM-DD` (Role: VIEWER+)
-- `GET /api/v1/index/family?date=YYYY-MM-DD` (Role: VIEWER+)
-- `GET /api/v1/index/attribution/{date}` (Role: ANALYST+ — Additive waterfall decomposition)
-- `GET /api/v1/routes` & `GET /api/v1/routes/{routeId}/fares` (Role: VIEWER+)
-- `GET /api/v1/lead-time/matrix?date=YYYY-MM-DD` (Role: VIEWER+ — T+1 to T+45 booking horizon matrix)
-- `GET /api/v1/quality/coverage` & `GET /api/v1/quality/imputation` (Role: VIEWER+)
-- `GET /api/v1/health` & `GET /api/v1/sources` (Role: ANALYST+ — Scraper circuit breakers)
-- `GET /api/v1/observations/{id}` (Full canonical audit record with SHA-256 hash) (Role: ANALYST+)
-- `GET /api/v1/methodology` & `GET /api/v1/index/vintages/{date}` (Role: Public / VIEWER)
-- `GET /api/v1/export/csv` & `GET /api/v1/export/sdmx` (Role: ANALYST+)
+### 2. Analyst Endpoints (Firebase ID token, role `ANALYST` or `ADMIN`)
+- `GET /api/v1/index/latest?series={AFI|TCT-AFI|ANC-AFI}&date=`
+- `GET /api/v1/index/history?series=AFI,TCT-AFI,ANC-AFI&from=&to=` (includes `provenance_boundary`)
+- `GET /api/v1/index/family?date=` (members + `drip_gap_points`, `drip_gap_pct`)
+- `GET /api/v1/index/attribution/{date}?series=` (axes: route, carrier, window, component, driver; `reconciled`)
+- `GET /api/v1/routes?date=` · `GET /api/v1/routes/{routeId}/fares`
+- `GET /api/v1/observations?date=&route=` · `GET /api/v1/observations/{id}` (full audit record: sha256, batch hashes, adapter version, object key)
+- `GET /api/v1/lead-time/matrix?date=`
+- `GET /api/v1/quality/coverage?from=&to=` · `GET /api/v1/quality/imputation`
+- `GET /api/v1/health` · `GET /api/v1/sources`
+- `GET /api/v1/methodology` · `GET /api/v1/index/vintages/{date}`
+- `GET /api/v1/export/csv` · `GET /api/v1/export/sdmx`
+
+Every analyst request verifies the Firebase ID token server-side and checks `role ∈ {ANALYST, ADMIN}`. Hiding pages in the UI is not a security control.
 
 ---
 
-## Part E · PostgreSQL & TimescaleDB Database Schema
+## Part E · Database Schema (SQLite)
 
-### 1. Enums
-```sql
-CREATE TYPE source_type AS ENUM ('AIRLINE', 'OTA', 'REFERENCE');
-CREATE TYPE fetch_tier AS ENUM ('HTTP', 'DYNAMIC', 'BROWSER');
-CREATE TYPE circuit_state AS ENUM ('HEALTHY', 'DEGRADED', 'OPEN', 'RECOVERING');
-CREATE TYPE missing_reason AS ENUM ('SOLD_OUT', 'NO_FLIGHT', 'MISSING_SOURCE', 'SOURCE_ERROR', 'PARSER_ERROR', 'BLOCKED', 'UNKNOWN');
-CREATE TYPE imputation_rule AS ENUM ('CROSS_SOURCE', 'CELL_MEAN', 'CARRY_FORWARD', 'EXCLUDED');
-CREATE TYPE provenance AS ENUM ('REAL', 'SIMULATED');
-CREATE TYPE validation_status AS ENUM ('VALID', 'INVALID', 'FLAGGED');
-CREATE TYPE job_state AS ENUM ('QUEUED', 'RUNNING', 'SUCCESS', 'RETRY_WAIT', 'DEAD_LETTER');
-```
+SQLite 3 with `PRAGMA journal_mode=WAL; PRAGMA foreign_keys=ON; PRAGMA busy_timeout=5000;`. All tables `STRICT`. Enums become `CHECK` constraints; timestamps are ISO-8601 UTC text; money is integer paise. Accessed through SQLAlchemy so `DATABASE_URL` can later point at Postgres without code changes. Migrations live in `infra/db/migrations`.
 
-### 2. Core Observation & Snapshot Tables
 ```sql
--- Append-only raw observations
+-- Append-only raw observations (payload itself lives in Firebase Storage)
 CREATE TABLE raw_observations (
-    raw_id UUID PRIMARY KEY,
-    run_id UUID NOT NULL,
-    source TEXT NOT NULL,
-    object_key TEXT NOT NULL, -- Firebase Storage / MinIO URL
-    sha256 CHAR(64) NOT NULL,
-    batch_hash CHAR(64) NOT NULL,
-    prev_batch_hash CHAR(64),
+    raw_id          TEXT PRIMARY KEY,               -- UUID
+    run_id          TEXT NOT NULL,
+    source          TEXT NOT NULL,
+    object_key      TEXT NOT NULL,                  -- gs://aerofarex-raw-observations/...
+    sha256          TEXT NOT NULL CHECK (length(sha256) = 64),
+    batch_hash      TEXT NOT NULL CHECK (length(batch_hash) = 64),
+    prev_batch_hash TEXT,
     adapter_version TEXT NOT NULL,
-    fetched_at TIMESTAMPTZ NOT NULL
-);
+    fetch_tier      TEXT NOT NULL CHECK (fetch_tier IN ('HTTP','DYNAMIC','BROWSER')),
+    fetched_at      TEXT NOT NULL
+) STRICT;
 
--- Granular Fare Observations Hypertable
 CREATE TABLE fare_observations (
-    observation_id UUID NOT NULL,
-    observed_at TIMESTAMPTZ NOT NULL,
-    raw_id UUID NOT NULL REFERENCES raw_observations(raw_id),
-    source TEXT NOT NULL,
-    fetch_tier fetch_tier NOT NULL,
-    route_id TEXT NOT NULL,
-    carrier_code CHAR(2) NOT NULL,
-    flight_number TEXT,
-    departure_datetime TIMESTAMPTZ NOT NULL,
-    search_date DATE NOT NULL,
-    departure_date DATE NOT NULL,
-    advance_days SMALLINT NOT NULL,
-    fare_family TEXT,
-    baggage_allowance_kg SMALLINT,
-    refundable BOOLEAN,
-    available BOOLEAN NOT NULL DEFAULT true,
-    missing_reason missing_reason,
-    validation_status validation_status NOT NULL DEFAULT 'VALID',
-    provenance provenance NOT NULL DEFAULT 'REAL',
-    fingerprint CHAR(64) NOT NULL,
-    PRIMARY KEY (observation_id, observed_at)
-);
-SELECT create_hypertable('fare_observations', 'observed_at');
+    observation_id       TEXT PRIMARY KEY,
+    observed_at          TEXT NOT NULL,
+    raw_id               TEXT NOT NULL REFERENCES raw_observations(raw_id),
+    source               TEXT NOT NULL,
+    route_id             TEXT NOT NULL,
+    carrier_code         TEXT NOT NULL CHECK (length(carrier_code) = 2),
+    flight_number        TEXT,
+    departure_datetime   TEXT,
+    search_date          TEXT NOT NULL,
+    departure_date       TEXT NOT NULL,
+    advance_days         INTEGER NOT NULL,
+    fare_family          TEXT,
+    baggage_allowance_kg INTEGER,
+    refundable           INTEGER CHECK (refundable IN (0,1)),
+    available            INTEGER NOT NULL DEFAULT 1 CHECK (available IN (0,1)),
+    missing_reason       TEXT CHECK (missing_reason IN ('SOLD_OUT','NO_FLIGHT','MISSING_SOURCE','SOURCE_ERROR','PARSER_ERROR','BLOCKED','UNKNOWN')),
+    validation_status    TEXT NOT NULL DEFAULT 'VALID' CHECK (validation_status IN ('VALID','INVALID','FLAGGED')),
+    provenance           TEXT NOT NULL DEFAULT 'REAL' CHECK (provenance IN ('REAL','SIMULATED')),
+    fingerprint          TEXT NOT NULL,
+    adapter_version      TEXT NOT NULL
+) STRICT;
+CREATE INDEX idx_obs_cell ON fare_observations (search_date, route_id, advance_days);
 
--- Unbundled Fare Components
 CREATE TABLE fare_components (
-    observation_id UUID NOT NULL,
-    observed_at TIMESTAMPTZ NOT NULL,
-    base_fare_paise BIGINT NOT NULL,
-    fuel_surcharge_paise BIGINT NOT NULL,
-    gst_paise BIGINT NOT NULL,
-    udf_paise BIGINT NOT NULL,
-    psf_paise BIGINT NOT NULL,
-    platform_fee_paise BIGINT NOT NULL DEFAULT 0,
-    total_payable_paise BIGINT NOT NULL,
-    currency CHAR(3) NOT NULL DEFAULT 'INR',
-    PRIMARY KEY (observation_id, observed_at)
-);
+    observation_id      TEXT PRIMARY KEY REFERENCES fare_observations(observation_id),
+    base_fare_paise     INTEGER NOT NULL CHECK (base_fare_paise >= 0),
+    fuel_surcharge_paise INTEGER NOT NULL CHECK (fuel_surcharge_paise >= 0),
+    gst_paise           INTEGER NOT NULL CHECK (gst_paise >= 0),
+    udf_paise           INTEGER NOT NULL CHECK (udf_paise >= 0),
+    psf_paise           INTEGER NOT NULL CHECK (psf_paise >= 0),
+    platform_fee_paise  INTEGER NOT NULL DEFAULT 0 CHECK (platform_fee_paise >= 0),
+    total_payable_paise INTEGER NOT NULL,
+    currency            TEXT NOT NULL DEFAULT 'INR',
+    CHECK (total_payable_paise = base_fare_paise + fuel_surcharge_paise + gst_paise
+                               + udf_paise + psf_paise + platform_fee_paise)
+) STRICT;
 
--- Published Index Snapshots Hypertable
 CREATE TABLE index_snapshots (
-    snapshot_id UUID PRIMARY KEY,
-    index_name TEXT NOT NULL, -- AFI | TCT-AFI | ANC-AFI
-    index_date DATE NOT NULL,
-    value NUMERIC(10, 4) NOT NULL,
-    base_value NUMERIC(10, 4) NOT NULL DEFAULT 100,
-    base_period TEXT NOT NULL,
-    coverage_ratio NUMERIC(4, 3) NOT NULL,
-    imputation_ratio NUMERIC(4, 3) NOT NULL,
-    provenance provenance NOT NULL,
-    vintage SMALLINT NOT NULL DEFAULT 1,
-    is_provisional BOOLEAN NOT NULL DEFAULT false,
-    calculated_at TIMESTAMPTZ NOT NULL,
+    snapshot_id      TEXT PRIMARY KEY,
+    index_name       TEXT NOT NULL CHECK (index_name IN ('AFI','TCT-AFI','ANC-AFI')),
+    index_date       TEXT NOT NULL,
+    value            REAL NOT NULL,
+    base_value       REAL NOT NULL DEFAULT 100,
+    base_period      TEXT NOT NULL,
+    coverage_ratio   REAL NOT NULL,
+    imputation_ratio REAL NOT NULL,
+    provenance       TEXT NOT NULL CHECK (provenance IN ('REAL','SIMULATED')),
+    vintage          INTEGER NOT NULL DEFAULT 1,
+    is_provisional   INTEGER NOT NULL DEFAULT 0,
+    calculated_at    TEXT NOT NULL,
     UNIQUE (index_name, index_date, vintage)
-);
-SELECT create_hypertable('index_snapshots', 'index_date');
+) STRICT;
+
+-- Append-only guarantee enforced in the database, not only in code
+CREATE TRIGGER raw_no_update BEFORE UPDATE ON raw_observations BEGIN SELECT RAISE(ABORT, 'append-only'); END;
+CREATE TRIGGER raw_no_delete BEFORE DELETE ON raw_observations BEGIN SELECT RAISE(ABORT, 'append-only'); END;
+CREATE TRIGGER obs_no_update BEFORE UPDATE ON fare_observations BEGIN SELECT RAISE(ABORT, 'append-only'); END;
+CREATE TRIGGER obs_no_delete BEFORE DELETE ON fare_observations BEGIN SELECT RAISE(ABORT, 'append-only'); END;
+CREATE TRIGGER snap_no_update BEFORE UPDATE ON index_snapshots BEGIN SELECT RAISE(ABORT, 'publish a new vintage instead'); END;
 ```
+Revisions are new `vintage` rows, never edits. Other tables (sources, routes, route_weights, carriers, index_contributions, adapter_health, audit_events) follow the same conventions.
+
+**Backups:** Railway volume backups (scheduled) + Litestream continuous replication to Firebase Storage (a GCS bucket) + nightly full snapshot.
 
 ---
 
 ## Part F · Seed Data & Mock Server Specification
 
-To achieve complete frontend-backend decoupling on Day One, the platform features a mock engine (`NEXT_PUBLIC_USE_MOCK=true`) fueled by pre-calculated seed payloads:
-1. **Time Span:** 30 consecutive days of data (e.g. 2026-08-22 to 2026-09-20).
-2. **Provenance Split:** First 18 days marked `SIMULATED`, final 12 days marked `REAL` (with an explicit vertical `provenance_boundary` rule drawn in time series charts).
-3. **Realistic Price Structure:** $T+1$ fares $2.5\times$ to $4\times$ the $T+45$ fare; weekend departures 15%–25% higher; 1 festival demand surge week.
-4. **Component Split:** Base fare 60%–70%, Fuel surcharge 8%–12%, UDF/PSF fixed by airport, GST 5%, Platform fee ₹350–₹550 on OTAs.
-5. **Deliberate Edge Cases:** 4% missing cells spread across all `missing_reason` types, flagged outliers retained (demonstrating flag-not-delete policy), and one source in `DEGRADED` status to exercise all 5 UI component states.
+Both frontends run without any backend.
+
+**Dashboard** (`NEXT_PUBLIC_USE_MOCK=true`): implemented in `dashboard/frontend/src/lib/mock/` (`seed.ts` generator, `handlers.ts` endpoint implementations, `controls.ts` test controls). Deterministic seed:
+1. **Time span:** 30 days, 2026-08-29 → 2026-09-27; **base date 2026-09-01 = 100**.
+2. **Provenance:** first 18 days `SIMULATED`, last 12 `REAL`, with `provenance_boundary`.
+3. **Prices:** T+1 ≈ 3.2× T+45; weekend departures +15–25%; festival surge 18–24 Sep; each source samples a fixed weekday/weekend mix so the index doesn't wobble weekly.
+4. **Components:** fuel surcharge share drifts up, airport UDF revised on 12 Sep, OTA platform fee creeps up: this produces the growing drip-pricing gap (latest AFI ≈ 101.4, TCT-AFI ≈ 113.1, gap ≈ +11.5%).
+5. **Edge cases:** ~3% missing across every `missing_reason`, flagged outliers retained, SpiceJet `DEGRADED`, a full `BLOCKED` day for MakeMyTrip on 10 Sep (coverage dips to ~76%).
+6. **Real math:** indices are computed with Jevons cells + booking-curve-weighted Laspeyres over the seed, so attribution genuinely reconciles on all five axes.
+7. **Test controls:** a "Mock data" pill in the top bar simulates latency, failure rate, empty lists and stale data.
+
+**Landing fare checker:** `landing/frontend/src/data/fares.ts` generates deterministic flights × platforms per search. `VITE_MOCK_AUTH=true` makes traveller sign-up/sign-in work locally (history in browser storage, sample history seeded for new mock accounts).
 
 ---
 
 ## Part G · Repository Structure & Monorepo Layout
 
-The repository is organized as a pnpm workspace and modular multi-tier monorepo separating the public citizen surface (`landing/`) from the sovereign econometric engine (`dashboard/`):
+npm workspaces (`package.json` → `landing/frontend`, `dashboard/frontend`, `packages/*`). **Note:** if `NODE_ENV=production` is set in your shell, run `npm install --include=dev`, or dev tools (TypeScript, Vite, types) are skipped.
 
 ```text
 AeroFareX/
-├── landing/                     # Public Citizen Transparency Surface
-│   ├── frontend/                # Public landing web app (citizen transparency, headline index widget)
-│   │   ├── src/
-│   │   │   ├── views/           # Hero, citizen fare explorer, methodology overview
-│   │   │   ├── components/      # Public metric counters, index badges, comparison widgets
-│   │   │   └── styles/          # Tailwind styling bound to packages/design-tokens
-│   │   ├── .env.example
-│   │   └── README.md
-│   │
-│   └── backend/                 # Public Lightweight REST API (FastAPI, Python 3.11+)
-│       ├── server/
-│       │   ├── routes/          # Public cached endpoints (/public/latest, /public/methodology)
-│       │   ├── services/        # High-level aggregate cache layer (zero authentication required)
-│       │   └── schemas/         # Public response envelopes
-│       ├── tests/               # Public API regression tests
-│       ├── .env.example
-│       └── README.md
-│
-├── dashboard/                   # Sovereign Gated Analyst Platform & Econometric Engine
-│   ├── frontend/                # Next.js 18+ Sovereign Analyst Portal
-│   │   ├── src/
-│   │   │   ├── app/             # Next.js App Router (Role-gated: VIEWER, ANALYST, ADMIN)
-│   │   │   ├── components/      # UI component library
-│   │   │   │   ├── charts/      # Accessible chart frames, Laspeyres series, lead-time matrix
-│   │   │   │   └── ui/          # Quality badges, breadcrumbs, status indicators, DataTables
-│   │   │   ├── lib/             # API client, Firebase auth helpers, mock server
-│   │   │   ├── styles/          # Global styles importing design tokens
-│   │   │   └── types/           # Frontend-specific type augmentations
-│   │   ├── .env.example
-│   │   └── README.md
-│   │
-│   └── backend/                 # FastAPI Analytical Backend (Python 3.11+)
-│       ├── server/              # Sovereign calculation engine (TimescaleDB, RBAC, SDMX)
-│       │   ├── api/v1/          # Versioned REST router modules (index, routes, attribution, audit)
-│       │   ├── core/            # Config, security middleware, JWT RBAC verification
-│       │   ├── db/              # Asyncpg connection pooling, TimescaleDB sessions
-│       │   ├── econometrics/    # Chained Laspeyres, Jevons aggregation, booking curve, hedonic regression
-│       │   ├── models/          # SQLAlchemy ORM models for observations, snapshots, ledger
-│       │   ├── schemas/         # Pydantic v2 request & response schemas
-│       │   └── services/        # Orchestration, cache management, export services
-│       ├── tests/               # Unit, integration, and econometric mathematical test suites
-│       ├── .env.example
-│       └── README.md
-│
-├── services/
-│   └── collector/               # Data Collection & Ingestion Engine
-│       ├── adapters/            # Carrier & OTA scrapers (IndiGo, Air India, Akasa, SpiceJet, MakeMyTrip)
-│       ├── orchestrator/        # Cron scheduler (02:30, 05:30, 13:00, 19:00 IST), circuit breakers
-│       ├── pipeline/            # Fare decomposition, IQR outlier filtering, cell-mean imputation
-│       ├── storage/             # SHA-256 batch hasher, Firebase Cloud Storage raw payload archiver
-│       ├── .env.example
-│       └── README.md
-│
+├── Project_context.md            # Living build log: current state, decisions, how to run. Read first.
+├── PRD.md · TRD.md               # Product + technical specification (v2.2)
+├── landing/
+│   ├── frontend/                 # Vite + React public site
+│   │   └── src/
+│   │       ├── App.tsx           # Home page (hero, fly-through transition, sections)
+│   │       ├── main.tsx          # Router: / · /fares · /account
+│   │       ├── pages/            # FaresPage.tsx, AccountPage.tsx
+│   │       ├── components/       # Header, HeroScene (3D), FlyThrough, WorkflowCard, AuthPanel, PageShell, NavAnchor
+│   │       ├── views/            # Home-page sections
+│   │       ├── data/             # mockData.ts (index story), fares.ts (fare checker mock), nav.ts
+│   │       ├── lib/              # firebase.ts, userAuth.tsx, userStore.ts, guestGate.ts, format.ts
+│   │       └── styles/           # landing.css, fares.css (token-bound, no colour literals)
+│   └── backend/                  # Public API package (router of aerofarex-core)
+├── dashboard/
+│   ├── frontend/                 # Next.js 16 analyst portal
+│   │   ├── src/app/              # Routes: / (overview), attribution, routes, routes/[routeId], lead-time,
+│   │   │                         #   quality, health, methodology, login
+│   │   ├── src/components/       # shell/ (AppShell, Sidebar, Topbar, ProfileMenu, Gates, MockControls),
+│   │   │                         #   ui/ (ChartFrame, DataTable, QualityBadge, States, …), charts/, overview/
+│   │   ├── src/lib/              # api/ (client, hooks), mock/ (seed, handlers), auth/, firebase/, config, nav, format
+│   │   └── scripts/set-role.mjs  # Grant/revoke the analyst role (Firebase Admin)
+│   └── backend/server/           # FastAPI analyst routers, econometrics, models, schemas, services
+├── services/collector/           # adapters/ · orchestrator/ · pipeline/ · storage/ · monitoring/
 ├── packages/
-│   ├── design-tokens/           # Shared design tokens (tokens.css, Tailwind CSS presets)
-│   └── shared-types/            # Canonical TypeScript contracts shared across apps
-│
+│   ├── design-tokens/            # brand.css, tokens.css, brand.ts, tailwind-preset.js
+│   └── shared-types/             # index.ts: API contracts (TS)
 ├── infra/
-│   ├── db/migrations/           # PostgreSQL 16 + TimescaleDB hypertable DDL migrations
-│   ├── firebase/                # Firestore security rules, Storage bucket policies
-│   └── docker/                  # Docker Compose multi-container local stack definitions
-│
-├── data/
-│   └── seed/                    # 30-day realistic seed dataset & generator (NEXT_PUBLIC_USE_MOCK)
-│
-├── PRD.md                       # Product Requirements Document v2.0
-├── TRD.md                       # Technical Requirements & Build Specification v2.0
-├── README.md                    # Monorepo onboarding guide & non-negotiable rules
-├── package.json                 # Root monorepo workspace configuration
-└── pnpm-workspace.yaml          # pnpm workspace definition
+│   ├── db/migrations/            # SQLite DDL migrations
+│   ├── firebase/                 # firestore.rules (written), storage.rules, firebase.json
+│   └── docker/
+└── data/seed/                    # Seed generator notes (dashboard seed lives in its mock layer)
 ```
 
+---
 
+## Part H · Identity, Access & Deployment
+
+### 1. Access model
+| Surface | Who | Sign-in | Gate |
+| :--- | :--- | :--- | :--- |
+| Landing `/`, `/fares` | Everyone | Optional | 5 free guest searches per browser, then sign-in prompt on the 6th |
+| Landing `/account` | Travellers | Firebase Auth (email/password, Google) | Own data only (Firestore rules) |
+| Dashboard | Analysts (NSO, RBI, DGCA, MoCA) | Firebase Auth + "Request access" sign-up | Custom claim `role ∈ {ANALYST, ADMIN}`; no claim → "Access request pending" |
+
+- One Firebase project (`aerofarex`) serves both apps. Traveller accounts never receive a `role` claim, so they can't open the dashboard.
+- Roles are granted with `npm run set-role -- <email> <ANALYST|ADMIN|NONE>` (needs a service-account key via `GOOGLE_APPLICATION_CREDENTIALS`; never commit it; `*firebase-adminsdk*.json` is gitignored). An admin UI with a backend endpoint replaces this later.
+- `ADMIN` currently equals `ANALYST`; admin-only tools (user approvals, source controls, revision publishing, audit log) are planned.
+- Local preview without Firebase: `NEXT_PUBLIC_AUTH_DEV_ROLE=ANALYST|ADMIN` (dashboard, `next dev` only, ignored in production) and `VITE_MOCK_AUTH=true` (landing).
+- Personal data (traveller history) follows DPDP Act 2023 expectations: purpose notice, delete-history and delete-account controls on `/account`.
+
+### 2. Deployment
+- **Railway**: one service `aerofarex-core` (FastAPI + APScheduler + collector), volume at `/data`, `DATABASE_URL=sqlite:////data/aerofarex.db`, `TZ=Asia/Kolkata`. Single instance (volumes don't support replicas); brief downtime on redeploy is covered by the scheduler's misfire grace. Railway cron jobs are not used (they must exit and can't share the volume).
+- **Firebase**: Hosting (both static frontends), Auth, Firestore (`infra/firebase/firestore.rules`: `firebase deploy --only firestore:rules`), Cloud Storage (raw payloads, DB replicas).
+- **Collector etiquette**: declared user-agent `AeroFareX-StatisticalCollector/2.0 (+https://mospi.gov.in/aerofarex-collector)`, one request at a time per domain, 3.5 s jittered delay, circuit breaker; no proxy rotation, CAPTCHA solving or bot-evasion. A source that blocks the declared collector is treated as a "no" → seek a data agreement. Long term: licensed airline/GDS feeds.

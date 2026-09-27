@@ -3,6 +3,8 @@
 Sovereign-grade airfare price measurement platform built for MoSPI / Smart India Hackathon.
 Full specification: [`PRD.md`](./PRD.md) · [`TRD.md`](./TRD.md) — the sole source of truth for this project.
 
+**New here, or feeding this repo to an AI assistant? Read [`Project_context.md`](./Project_context.md) first:** current state, decisions, how to run, and the change log.
+
 Published indices: **AFI** (headline base fare) · **TCT-AFI** (total cost of travel) · **ANC-AFI** (ancillary fees).
 
 ## Repository Layout
@@ -14,8 +16,8 @@ AeroFareX/
 │   └── backend/                 # Public lightweight read-only REST API (cached, rate-limited)
 │
 ├── dashboard/                   # Sovereign Gated Analyst Platform & Econometric Engine
-│   ├── frontend/                # Next.js 18+ analyst portal (App Router in src/app, charts, DataTables)
-│   └── backend/                 # FastAPI analytical backend (server/api/v1, server/econometrics, TimescaleDB)
+│   ├── frontend/                # Next.js 16 analyst portal (analyst-only; App Router in src/app, charts, DataTables)
+│   └── backend/                 # FastAPI analytical backend (server/api/v1, server/econometrics, SQLite)
 │
 ├── services/
 │   └── collector/               # Data collection & ingestion engine — scraper adapters, scheduler, sanitization pipeline
@@ -25,15 +27,16 @@ AeroFareX/
 │   └── shared-types/            # TypeScript contracts shared across landing and dashboard
 │
 ├── infra/
-│   ├── db/migrations/           # PostgreSQL 16 + TimescaleDB schema migrations
+│   ├── db/migrations/           # SQLite schema migrations
 │   ├── firebase/                # Firestore/Storage security rules, firebase.json
 │   └── docker/                  # docker-compose and container definitions for local dev
 │
 ├── data/
 │   └── seed/                    # 30-day realistic seed dataset + generator (powers NEXT_PUBLIC_USE_MOCK)
 │
-├── PRD.md                       # Product Requirements Document v2.0
-└── TRD.md                       # Technical Requirements & Build Spec v2.0
+├── Project_context.md           # Living build log — read first
+├── PRD.md                       # Product Requirements Document v2.2
+└── TRD.md                       # Technical Requirements & Build Spec v2.2
 ```
 
 Full per-folder-and-file rationale (why each split exists, what belongs where, cross-cutting
