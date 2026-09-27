@@ -18,6 +18,8 @@ const FINAL_YAW = 0.12;
 const FINAL_ROLL = 0.15;
 const APPROACH_PITCH = 0.12;
 const TURN_BANK = 0.42;
+// Phones redraw the settled scene (slow cloud drift) at 30fps to leave headroom for scrolling.
+const MOBILE_IDLE_FRAME_MS = 1000 / 30;
 const worldAtScreen = (camera: THREE.PerspectiveCamera, x: number, y: number, z: number) => {
   const point = new THREE.Vector3(x * 2 - 1, 1 - y * 2, 0.5).unproject(camera);
   const distance = (z - camera.position.z) / (point.z - camera.position.z);
@@ -117,6 +119,7 @@ export const HeroScene: React.FC = () => {
     let visible = true;
     let frame = 0;
     let sceneStart: number | null = null;
+    let lastRender = 0;
     let introStart: number | null = null;
     let approach: Approach | null = null;
     let approachMobile = false;
@@ -125,7 +128,7 @@ export const HeroScene: React.FC = () => {
       width = host.clientWidth;
       height = host.clientHeight;
       if (!width || !height) return;
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, width < 760 ? 1.4 : 1.8));
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, width < 760 ? 1.25 : 1.8));
       renderer.setSize(width, height, false);
       ambient.groundColor.set(width < 760 ? 0xe1edf4 : 0x8c5066);
       ambient.intensity = width < 760 ? 4 : 2.5;
@@ -146,6 +149,12 @@ export const HeroScene: React.FC = () => {
       if (sceneStart === null) sceneStart = time;
       const elapsed = (time - sceneStart) / 1000;
       const mobile = width < 760;
+      const introDone = introStart !== null && time - introStart > INTRO_DURATION;
+      if (mobile && introDone && !reduced && time - lastRender < MOBILE_IDLE_FRAME_MS - 2) {
+        frame = requestAnimationFrame(draw);
+        return;
+      }
+      lastRender = time;
       camera.position.set(0, 1.3, -12.3);
       camera.lookAt(0, -0.25, 0);
       camera.updateMatrixWorld();
