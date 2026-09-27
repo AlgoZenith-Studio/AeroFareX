@@ -3,4 +3,4 @@
 Next.js App Router pages. Route map per TRD build spec: /, /attribution, /cost-comparison, /routes,
 /routes/[routeId], /lead-time, /carriers, /components, /quality, /health, /methodology, /login.
 
-Role-gated routes (VIEWER/ANALYST/ADMIN) are omitted entirely for unauthorized roles, never disabled.
+Analyst-only: every page needs the ANALYST role (ADMIN counts as analyst). Accounts without it see "access request pending". Public users use the landing site.

@@ -1,8 +1,8 @@
 import React from 'react';
 import { ArrowUp } from 'lucide-react';
-import { PORTAL_URL } from '../lib/format';
 import { HEADLINE } from '../data/mockData';
 import { NAV_LINKS } from '../data/nav';
+import { ANALYST_SIGNUP_URL, NavAnchor } from '../components/NavAnchor';
 
 const IconX: React.FC = () => (
   <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
@@ -40,7 +40,7 @@ export const SiteFooter: React.FC = () => (
           <p className="ed-label">Explore</p>
           <ul>
             {NAV_LINKS.map((l) => (
-              <li key={l.href}><a href={l.href}>{l.label}</a></li>
+              <li key={l.label}><NavAnchor link={l} /></li>
             ))}
           </ul>
         </nav>
@@ -48,7 +48,7 @@ export const SiteFooter: React.FC = () => (
         <nav className="foot-col" aria-label="For professionals">
           <p className="ed-label">For professionals</p>
           <ul>
-            <li><a href={PORTAL_URL} target="_blank" rel="noreferrer">Analyst dashboard</a></li>
+            <li><a href={ANALYST_SIGNUP_URL} target="_blank" rel="noreferrer">Analyst access</a></li>
             <li><a href="#how">Our method</a></li>
             <li><a href="#who">Who it&apos;s for</a></li>
             <li><a href="#gap">Hidden fees explained</a></li>

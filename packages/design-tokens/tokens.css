@@ -24,12 +24,20 @@
   --axis: var(--line-control);
   --border: var(--line);
 
-  /* Categorical Series (Fixed Slot Order — Never Recycled). Slot 1 = brand vivid sky. */
-  --slot-1: var(--sky-500);  /* AFI Headline / IndiGo */
+  /* Categorical Series (Fixed Slot Order — Never Recycled). Slot 1 = brand sky, one step
+     deeper than --sky-500: #00ccff fails the chart lightness band and is 1.9:1 on white.
+     Validated with the dataviz palette validator (light): all 5 pass band/chroma/CVD. */
+  --slot-1: var(--sky-600);  /* AFI Headline / IndiGo */
   --slot-2: #eb6834;         /* TCT-AFI / Air India */
   --slot-3: #1baf7a;         /* AFI uncorrected / Akasa Air */
   --slot-4: #eda100;         /* ANC-AFI / SpiceJet */
   --slot-5: #e87ba4;         /* MakeMyTrip */
+
+  /* Diverging pair for polarity (waterfalls, period change): price up / price down,
+     with a neutral grey rule at zero (rule 3). Validated: CVD dE 21.9, both >= 3:1. */
+  --diverge-up: #d0582a;
+  --diverge-down: var(--sky-600);
+  --diverge-mid: var(--line-control);
 
   /* Status Colors (Never reused as series lines) */
   --status-good: #0ca30c;

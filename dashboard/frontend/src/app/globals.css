@@ -1,0 +1,143 @@
+/*
+ * AeroFareX analyst portal: global styles.
+ * COLOURS: none are defined here. Everything comes from packages/design-tokens
+ * (brand.css + tokens.css) via CSS custom properties / the Tailwind preset.
+ */
+@import 'tailwindcss';
+@import '@aerofarex/design-tokens/tokens.css';
+
+@config '../../../../packages/design-tokens/tailwind-preset.js';
+
+/* Same type roles as the landing page: display serif for headings and big
+   numbers, its extra-bold italic for emphasis, Google Sans for everything else. */
+@font-face {
+  font-family: 'AFX Serif';
+  src: url('/fonts/AnthropicSerif-Display-Bold-Static.otf') format('opentype');
+  font-weight: 700; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: 'AFX Serif';
+  src: url('/fonts/AnthropicSerif-Display-ExtraboldItalic-Static.otf') format('opentype');
+  font-weight: 800; font-style: italic; font-display: swap;
+}
+
+@theme {
+  --font-sans: 'Google Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-display: 'AFX Serif', Georgia, 'Times New Roman', serif;
+  --font-mono: var(--font-jetbrains), ui-monospace, 'SFMono-Regular', Consolas, monospace;
+}
+
+@layer base {
+  html { -webkit-font-smoothing: antialiased; }
+  body {
+    background: var(--bg-sky-100);
+    background-attachment: fixed;
+    color: var(--text-1);
+    font-family: var(--font-sans);
+  }
+  :focus-visible { outline: 2px solid var(--brand-accent); outline-offset: 2px; }
+  button { cursor: pointer; }
+  /* Headings use the display serif, as on the landing page */
+  h1, h2, h3, h4 {
+    font-family: var(--font-display); font-weight: 700; word-spacing: 0.06em;
+  }
+}
+
+@layer components {
+  /* White card on the sky-100 canvas (the reference layout's building block) */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 22px;
+    box-shadow: var(--shadow-hairline);
+  }
+  /* The highlighted card: the landing page's vivid sky band, black text on it */
+  .card-hero {
+    color: var(--text-1);
+    border-radius: 22px;
+    background: var(--bg-sky-400);
+    box-shadow: var(--shadow-accent-soft);
+  }
+  /* Soft accent card (next run, sidebar promo): pale sky band */
+  .card-sky {
+    color: var(--text-1);
+    border-radius: 22px;
+    background: var(--bg-sky-200);
+    border: 1px solid var(--line-sky);
+  }
+  /* Display serif for big numbers (landing: stats, ledger totals) */
+  .font-display { font-family: var(--font-display); font-weight: 700; word-spacing: 0.06em; }
+  .num { font-variant-numeric: tabular-nums; }
+
+  /* "Jelly" plate for content over photography: solid whitish gradient,
+     glossy top rim, soft sky inner glow at the bottom edge. */
+  .glass-plate {
+    position: relative; isolation: isolate;
+    border-radius: 24px;
+    /* Solid whitish gradient: white into the palest sky */
+    background: linear-gradient(165deg, var(--white) 0%, var(--sky-100) 55%, var(--sky-200) 100%);
+    border: 1px solid var(--white);
+    box-shadow:
+      inset 0 1px 0 var(--white),
+      inset 0 -10px 24px -12px color-mix(in srgb, var(--sky-400) 55%, transparent),
+      inset 0 10px 22px -14px color-mix(in srgb, var(--white) 60%, transparent),
+      0 18px 40px -16px color-mix(in srgb, var(--ink) 60%, transparent);
+  }
+  /* Gloss: a soft specular highlight across the upper half */
+  .glass-plate::before {
+    content: ''; position: absolute; inset: 1px 1px 50% 1px; z-index: -1;
+    border-radius: 23px 23px 60% 60% / 23px 23px 18px 18px;
+    background: linear-gradient(180deg, color-mix(in srgb, var(--white) 75%, transparent), transparent);
+    pointer-events: none;
+  }
+
+  /* Rule 6: 45° tone-on-tone hatch for SIMULATED (and imputed) data */
+  .hatch {
+    background-image: repeating-linear-gradient(
+      -45deg,
+      color-mix(in srgb, currentColor 55%, transparent) 0 2px,
+      transparent 2px 7px
+    );
+  }
+
+  .btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    height: 44px; padding: 0 20px; border-radius: var(--r-pill);
+    font-size: 15px; font-weight: 500; white-space: nowrap;
+    transition: background-color var(--dur-base), color var(--dur-base), border-color var(--dur-base);
+  }
+  .btn-primary {
+    background: var(--accent); color: var(--on-accent); font-weight: 700;
+    box-shadow: var(--shadow-accent-soft);
+  }
+  .btn-primary:hover { background: var(--accent-hover); box-shadow: var(--shadow-accent); }
+  .btn-outline { background: var(--surface); color: var(--text-1); border: 1px solid var(--line-control); font-weight: 700; }
+  .btn-outline:hover { border-color: var(--text-1); }
+  .btn-dark { background: var(--black); color: var(--white); font-weight: 700; }
+  .btn-dark:hover { background: var(--black-soft); }
+  .icon-btn {
+    display: grid; place-items: center; width: 34px; height: 34px; border-radius: 50%;
+    border: 1.5px solid currentColor; flex: none;
+    transition: background-color var(--dur-base);
+  }
+
+  .eyebrow {
+    display: inline-flex; align-items: center; gap: 8px;
+    font-size: 11px; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: var(--text-1);
+  }
+  .eyebrow::before { content: ''; width: 16px; height: 3px; border-radius: 3px; background: var(--accent); }
+
+  .skeleton {
+    background: linear-gradient(90deg, var(--surface-alt), var(--surface-tint), var(--surface-alt));
+    background-size: 200% 100%;
+    animation: shimmer 1.4s ease-in-out infinite;
+    border-radius: var(--r-md);
+  }
+}
+
+@keyframes shimmer { from { background-position: 100% 0; } to { background-position: -100% 0; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton { animation: none; }
+  * { transition-duration: 0ms !important; }
+}

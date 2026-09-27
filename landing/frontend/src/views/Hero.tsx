@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router';
 import { ArrowRight } from 'lucide-react';
 import { HeroScene } from '../components/HeroScene';
 
@@ -19,9 +20,9 @@ export const Hero: React.FC = () => (
         </p>
 
         <div className="hero-ctas">
-          <a className="btn btn-primary btn-pill" href="#routes">
-            Check a route <ArrowRight size={18} aria-hidden="true" />
-          </a>
+          <Link className="btn btn-primary btn-pill" to="/fares">
+            Search fares <ArrowRight size={18} aria-hidden="true" />
+          </Link>
           <a className="btn btn-ghost btn-pill" href="#how">See how it works</a>
         </div>
       </div>

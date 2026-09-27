@@ -1,0 +1,39 @@
+rules_version = '2';
+
+// AeroFareX Firestore rules.
+//
+//  users/{uid}/...        Public travellers' own data (search history, saved routes).
+//                         Only that signed-in user can read or write it.
+//  sources/{id}, alerts/  Live collector health and surge alerts for the analyst
+//                         dashboard: readable by analysts (role claim), written only
+//                         by the collector's service account (Admin SDK bypasses rules).
+//
+// Deploy: firebase deploy --only firestore:rules
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() { return request.auth != null; }
+    function isAnalyst() {
+      return signedIn() && request.auth.token.role in ['ANALYST', 'ADMIN'];
+    }
+
+    match /users/{uid}/{document=**} {
+      allow read, write: if signedIn() && request.auth.uid == uid;
+    }
+
+    match /sources/{id} {
+      allow read: if isAnalyst();
+      allow write: if false;
+    }
+
+    match /alerts/{id} {
+      allow read: if isAnalyst();
+      allow write: if false;
+    }
+
+    // Everything else is closed.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

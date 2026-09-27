@@ -11,6 +11,7 @@ export const palette = {
   sky300: '#a8eeff',
   sky400: '#6ce2ff',
   sky500: '#00ccff',
+  sky600: '#0096c7',
   sky800: '#00607a',
   sky900: '#002b38',
   black: '#000000',

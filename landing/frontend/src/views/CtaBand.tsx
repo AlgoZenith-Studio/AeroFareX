@@ -1,6 +1,7 @@
 import React from 'react';
 import { ArrowRight } from 'lucide-react';
-import { PORTAL_URL } from '../lib/format';
+import { Link } from 'react-router';
+import { ANALYST_SIGNUP_URL } from '../components/NavAnchor';
 
 export const CtaBand: React.FC = () => (
   <section className="ed band-400 cta-ed" aria-labelledby="cta-title">
@@ -18,15 +19,15 @@ export const CtaBand: React.FC = () => (
 
       <div className="cta-ed-row">
         <p className="ed-lead">
-          No sign-up, no ads, nothing to sell. Check today&apos;s prices, or open the full dashboard for
-          deeper analysis.
+          No ads, nothing to sell. Search today&apos;s real prices, or, if you work in government or research,
+          request access to the analyst dashboard.
         </p>
         <div className="hero-ctas">
-          <a className="btn btn-dark" href="#routes">
-            Check a route <ArrowRight size={18} aria-hidden="true" />
-          </a>
-          <a className="btn btn-ghost" href={PORTAL_URL} target="_blank" rel="noreferrer">
-            Open analyst dashboard
+          <Link className="btn btn-dark" to="/fares">
+            Search fares <ArrowRight size={18} aria-hidden="true" />
+          </Link>
+          <a className="btn btn-ghost" href={ANALYST_SIGNUP_URL} target="_blank" rel="noreferrer">
+            Analyst access
           </a>
         </div>
       </div>

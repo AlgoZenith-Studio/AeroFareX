@@ -25,6 +25,7 @@
   --sky-300: #a8eeff;  /* rgb(168,238,255)  light — borders, secondary bars     */
   --sky-400: #6ce2ff;  /* rgb(108,226,255)  bright — editorial band bg, marker  */
   --sky-500: #00ccff;  /* rgb(0,204,255)    VIVID — primary buttons, key fills  */
+  --sky-600: #0096c7;  /* derived mid sky — chart lines/marks (L in band, 3.1:1 on white) */
   --sky-800: #00607a;  /* derived deep blue — blue text/links on light (6.7:1)  */
   --sky-900: #002b38;  /* derived deepest blue — rules, labels, crop marks      */
 
