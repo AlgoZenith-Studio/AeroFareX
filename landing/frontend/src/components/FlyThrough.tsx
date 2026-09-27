@@ -23,7 +23,10 @@ import { PlaneModelCanvas } from './PlaneModelCanvas';
  */
 
 const TRANSITION_SRC = '/TRANSITION_VIDEO.mp4';
-const EASE = 0.12; // 0..1 — lower = silkier but laggier
+// Seconds for progress to close ~63% of the gap to the scroll position.
+// Touch scrolling is already smooth, so it follows the finger more tightly.
+const SMOOTHING = 0.13;
+const SMOOTHING_TOUCH = 0.06;
 const ROUTE = {
   start: { x: -8, y: 102 },
   control1: { x: 19, y: 98 },
@@ -146,13 +149,18 @@ export const FlyThrough: React.FC = () => {
     let raf = 0;
     let running = false;
     let current = 0;
+    let lastTime = 0;
     let stageWidth = 0;
     let stageHeight = 0;
+    const smoothing = window.matchMedia('(pointer: coarse)').matches ? SMOOTHING_TOUCH : SMOOTHING;
 
     const updateWakeGeometry = () => {
       const rect = stage.getBoundingClientRect();
       const planeWidth = parseFloat(getComputedStyle(plane).width);
       if (!rect.width || !rect.height || !planeWidth) return;
+      // Mobile browsers fire resize while the URL bar slides; the svh stage keeps
+      // its size then, so skip the re-render mid-scroll.
+      if (rect.width === stageWidth && rect.height === stageHeight) return;
       stageWidth = rect.width;
       stageHeight = rect.height;
       const left = makeWakePath(ENGINE_X[0], stageWidth, stageHeight, planeWidth);
@@ -169,12 +177,17 @@ export const FlyThrough: React.FC = () => {
     const targetProgress = (): number => {
       const r = section.getBoundingClientRect();
       const travel = r.height;
-      return travel > 0 ? Math.min(1, Math.max(0, (window.innerHeight - r.top) / travel)) : 0;
+      const viewport = stageHeight || window.innerHeight;
+      return travel > 0 ? Math.min(1, Math.max(0, (viewport - r.top) / travel)) : 0;
     };
 
-    const tick = () => {
+    const tick = (time: number) => {
       const target = targetProgress();
-      current += (target - current) * EASE;
+      // Frame-rate independent easing: same feel at 60, 90 or 120 Hz, and no
+      // stall when a phone drops frames.
+      const dt = lastTime ? Math.min(0.1, (time - lastTime) / 1000) : 1 / 60;
+      lastTime = time;
+      current += (target - current) * (1 - Math.exp(-dt / smoothing));
       if (Math.abs(target - current) < 0.0005) current = target;
       section.style.setProperty('--p', current.toFixed(4));
 
@@ -189,8 +202,8 @@ export const FlyThrough: React.FC = () => {
       const angle = routeAngle(point, stageWidth, stageHeight);
       const merge = smoothstep(0.59, 0.67, current);
       const componentOpacity = 1 - merge;
-      section.style.setProperty('--plane-x', point.x.toFixed(2));
-      section.style.setProperty('--plane-y', point.y.toFixed(2));
+      section.style.setProperty('--plane-tx', `${(point.x * stageWidth / 100).toFixed(1)}px`);
+      section.style.setProperty('--plane-ty', `${(point.y * stageHeight / 100).toFixed(1)}px`);
       section.style.setProperty('--plane-angle', `${(angle * 180 / Math.PI).toFixed(2)}deg`);
       section.style.setProperty('--plane-scale', (0.86 + routeProgress * 0.16).toFixed(3));
       section.style.setProperty('--plane-opacity', (
@@ -229,6 +242,7 @@ export const FlyThrough: React.FC = () => {
         running = entry.isIntersecting;
         if (running && !raf) {
           current = targetProgress(); // no catch-up jump when re-entering
+          lastTime = 0;
           raf = requestAnimationFrame(tick);
         }
       },

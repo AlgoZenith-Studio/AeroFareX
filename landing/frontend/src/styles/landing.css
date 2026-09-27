@@ -583,18 +583,21 @@ h1, h2, h3, h4, .hero-title, .h2, .trust-item strong, .ed-box-num, .gap-giant, .
 /* margin-bottom:-100vh lets the next section slide up OVER the pinned stage for the
    last screen of travel, so there is no empty sky after the plane has gone */
 .fly {
-  --p: 0; --plane-x: -8; --plane-y: 60; --plane-angle: 0deg;
+  --p: 0; --plane-tx: -100px; --plane-ty: 60vh; --plane-angle: 0deg;
   --plane-scale: 0.86; --plane-opacity: 0; --route-progress-left: 0; --route-progress-right: 0; --route-opacity: 0;
   --merge: 0; --base-opacity: 0; --tax-opacity: 0; --fee-opacity: 0; --total-opacity: 0;
   position: relative; height: 200vh; margin-bottom: -100vh; background: var(--ink);
+  /* svh stays fixed while the mobile URL bar slides, so progress never jumps */
+  height: 200svh; margin-bottom: -100svh;
 }
 .fly-stage { position: sticky; top: 0; height: 100vh; height: 100svh; overflow: hidden; isolation: isolate; }
-/* Sky climbs from ink (matches hero) to sky-400 (matches the manifesto) */
+/* Sky climbs from ink (matches hero) to sky-400 (matches the manifesto).
+   A 4x-tall gradient slid with transform, so it moves on the GPU without repainting. */
 .fly-sky {
-  position: absolute; inset: 0;
+  position: absolute; top: 0; left: 0; width: 100%; height: 400%;
   background: linear-gradient(180deg, var(--ink) 0%, var(--sky-900) 28%, var(--sky-800) 52%, var(--sky-500) 78%, var(--sky-400) 100%);
-  background-size: 100% 400%;
-  background-position: 50% calc(var(--p) * 100%);
+  transform: translate3d(0, calc(var(--p) * -75%), 0);
+  will-change: transform;
 }
 .fly-route { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; opacity: var(--route-opacity); }
 .fly-route path {
@@ -619,12 +622,11 @@ h1, h2, h3, h4, .hero-title, .h2, .trust-item strong, .ed-box-num, .gap-giant, .
   filter: blur(2px); will-change: transform;
 }
 .fly-plane {
-  position: absolute;
-  left: calc(var(--plane-x) * 1%); top: calc(var(--plane-y) * 1%);
+  position: absolute; left: 0; top: 0;
   width: clamp(90px, 13vmin, 160px);
-  color: var(--white); opacity: var(--plane-opacity); will-change: transform;
+  color: var(--white); opacity: var(--plane-opacity); will-change: transform, opacity;
   filter: drop-shadow(var(--shadow-dark));
-  transform: translate(-50%, -50%) rotate(var(--plane-angle)) scale(var(--plane-scale));
+  transform: translate3d(var(--plane-tx), var(--plane-ty), 0) translate(-50%, -50%) rotate(var(--plane-angle)) scale(var(--plane-scale));
   transform-origin: 50% 50%;
 }
 .fly-plane-model { position: relative; width: 100%; aspect-ratio: 5 / 6; }
@@ -657,8 +659,11 @@ h1, h2, h3, h4, .hero-title, .h2, .trust-item strong, .ed-box-num, .gap-giant, .
 
 @media (max-width: 760px) {
   .fly-breakdown { top: 30%; left: var(--gutter); font-size: 15px; }
-  .fly-plane { width: clamp(80px, 16vmin, 120px); }
-  .fly-cloud { filter: blur(2px); }
+  .fly-plane { width: clamp(80px, 16vmin, 120px); filter: none; }
+  /* Phones: per-frame blur and SVG noise filters are what made this scene stutter. */
+  .fly-cloud { filter: none; }
+  .fly-vapor-haze { filter: none; stroke-width: 2.2; opacity: 0.22; }
+  .fly-vapor-body { filter: none; opacity: 0.55; }
 }
 
 /* ---------- responsive */
