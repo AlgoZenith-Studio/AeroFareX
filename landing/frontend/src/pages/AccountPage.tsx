@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router';
-import { ArrowRight, BookmarkX, LogOut, RotateCcw, Search, Trash2 } from 'lucide-react';
+import { ArrowRight, BookmarkX, LockKeyhole, LogOut, RotateCcw, Search, Trash2 } from 'lucide-react';
 import { PageShell } from '../components/PageShell';
 import { AuthPanel } from '../components/AuthPanel';
 import { cityOf } from '../data/fares';
@@ -57,18 +57,28 @@ export const AccountPage: React.FC = () => {
   // ---------------------------------------------------------------- signed out: sign in here
   if (ready && !user) {
     return (
-      <PageShell title="Sign in">
-        <section className="page-hero theme-dark">
-          <div className="container">
-            <p className="eyebrow">Your account</p>
-            <h1 className="page-title">Save your searches and <span className="grad">come back</span> to them</h1>
-            <p className="page-sub">A free account keeps your fare searches and saved routes, so you can check them again in one tap.</p>
-          </div>
-        </section>
-        <section className="ed band-100">
-          <div className="ed-inner" style={{ display: 'grid', placeItems: 'center' }}>
-            <div className="fx-dialog" style={{ boxShadow: 'none' }}>
-              <AuthPanel initialMode="signin" />
+      <PageShell title="Sign in" showFooter={false}>
+        <section className="account-access" aria-labelledby="account-access-title">
+          <div className="account-access-layout container">
+            <div className="account-access-story">
+              <p className="account-access-kicker"><span>01 / YOUR ACCOUNT</span><span>AEROFAREX</span></p>
+              <div className="account-access-copy">
+                <p className="eyebrow">Your travel account</p>
+                <h1 id="account-access-title">Your searches,<br /><span className="grad">ready when you return.</span></h1>
+                <p>Keep your fare searches and saved routes in one place. Find them again when you need them.</p>
+              </div>
+              <p className="account-access-privacy"><LockKeyhole size={15} aria-hidden="true" /> Only you can see your account data.</p>
+            </div>
+
+            <div className="account-access-form-area">
+              <div className="account-access-form">
+                <div className="account-access-form-head">
+                  <span className="account-access-form-index">AEROFAREX / ACCOUNT</span>
+                  <h2>Your account.</h2>
+                  <p>Sign in or create a free account to save your routes.</p>
+                </div>
+                <AuthPanel initialMode="signin" />
+              </div>
             </div>
           </div>
         </section>

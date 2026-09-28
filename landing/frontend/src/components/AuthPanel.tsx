@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useId, useState } from 'react';
 import { FirebaseError } from 'firebase/app';
 import { ArrowRight } from 'lucide-react';
 import { useUserAuth } from '../lib/userAuth';
@@ -22,6 +22,7 @@ export const AuthPanel: React.FC<{ initialMode?: 'signin' | 'signup' }> = ({ ini
   const [password, setPassword] = useState('');
   const [msg, setMsg] = useState<{ kind: 'error' | 'info'; text: string } | null>(null);
   const [busy, setBusy] = useState(false);
+  const passwordId = useId();
 
   const run = async (fn: () => Promise<void>, done?: string) => {
     setBusy(true);
@@ -49,13 +50,13 @@ export const AuthPanel: React.FC<{ initialMode?: 'signin' | 'signup' }> = ({ ini
       </div>
 
       <button type="button" className="btn btn-ghost" disabled={busy} onClick={() => void run(signInWithGoogle)}>
+        <img className="auth-google-icon" src="/google-g.svg" alt="" aria-hidden="true" />
         Continue with Google
       </button>
       <p className="auth-or">or with email</p>
 
       <form
-        className="auth-panel"
-        style={{ padding: 0 }}
+        className="auth-form"
         onSubmit={(e) => {
           e.preventDefault();
           void run(() => (signup ? signUp(name, email, password) : signInWithEmail(email, password)));
@@ -71,9 +72,9 @@ export const AuthPanel: React.FC<{ initialMode?: 'signin' | 'signup' }> = ({ ini
           Email
           <input type="email" required autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" />
         </label>
-        <label className="auth-field">
-          <span style={{ display: 'flex', justifyContent: 'space-between' }}>
-            Password
+        <div className="auth-field">
+          <span className="auth-field-heading">
+            <label htmlFor={passwordId}>Password</label>
             {!signup && (
               <button
                 type="button"
@@ -87,10 +88,11 @@ export const AuthPanel: React.FC<{ initialMode?: 'signin' | 'signup' }> = ({ ini
             )}
           </span>
           <input
+            id={passwordId}
             type="password" required minLength={8} autoComplete={signup ? 'new-password' : 'current-password'}
             value={password} onChange={(e) => setPassword(e.target.value)} placeholder={signup ? 'At least 8 characters' : '••••••••'}
           />
-        </label>
+        </div>
         {msg && <p className="auth-msg" data-kind={msg.kind} role={msg.kind === 'error' ? 'alert' : 'status'}>{msg.text}</p>}
         <button type="submit" className="btn btn-primary" disabled={busy}>
           {busy ? 'Please wait…' : signup ? 'Create free account' : 'Sign in'} {!busy && <ArrowRight size={17} aria-hidden="true" />}
