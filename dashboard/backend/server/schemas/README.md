@@ -1,5 +1,5 @@
 # server/schemas
 
-Pydantic v2 request/response schemas matching TRD Part D contracts exactly, field-for-field,
-including the mandatory quality-metadata block (coverage, imputation_rate, provenance, vintage,
-is_provisional, methodology_version, quality_status) on every index response.
+Pydantic v2 mirrors of `packages/shared-types/index.ts` (TRD Part D), field for field, including
+the quality block on every index response. `tests/test_api.py` checks the field names against
+the TypeScript.

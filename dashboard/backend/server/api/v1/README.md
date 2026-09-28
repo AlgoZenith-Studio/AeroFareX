@@ -1,5 +1,6 @@
 # server/api/v1
 
-Versioned route modules: index (latest/history/family/attribution), routes, lead-time, quality,
-sources/health, observations, methodology, export (csv/sdmx). One module per resource group,
-mirroring the TRD Part D endpoint list.
+One router per TRD Part D resource group, all behind the analyst role check: `index.py`
+(latest, history, family, attribution, vintages), `routes.py`, `observations.py`,
+`lead_time.py`, `quality.py`, `health.py` (health, sources), `methodology.py`, `export.py`
+(csv, sdmx).

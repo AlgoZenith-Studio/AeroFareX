@@ -1,0 +1,11 @@
+# Continuous replication of the SQLite database to Firebase Storage (a GCS bucket).
+# Auth: GOOGLE_APPLICATION_CREDENTIALS (see entrypoint.sh). Railway volume backups are the
+# second line of defence.
+dbs:
+  - path: /data/aerofarex.db
+    replicas:
+      - type: gcs
+        bucket: ${LITESTREAM_GCS_BUCKET}
+        path: litestream/aerofarex.db
+        retention: 720h
+        snapshot-interval: 24h

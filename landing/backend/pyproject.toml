@@ -1,0 +1,15 @@
+[project]
+name = "aerofarex-public-api"
+version = "0.1.0"
+description = "AeroFareX public read-only API (/api/v1/public/*), mounted inside aerofarex-core"
+requires-python = ">=3.11"
+# Runs inside aerofarex-core and imports its `server` package at runtime; the
+# dependency is not declared here to keep the workspace free of a cycle.
+dependencies = ["fastapi>=0.115", "pydantic>=2.9"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["public_api"]

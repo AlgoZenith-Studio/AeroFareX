@@ -8,7 +8,7 @@
 > **For AI assistants:** load this file, then `TRD.md`, before editing code. Follow the "Rules" section
 > strictly. When you finish a change, add an entry to the Change log at the bottom.
 
-**Last updated:** 2026-09-28 · **Latest commit at time of writing:** `0df0262` (dashboard v1 + user view v1)
+**Last updated:** 2026-09-29 · **Latest:** backend `aerofarex-core` v1 (M1–M4 done, collector framework M5/M6, deploy config M8)
 
 ---
 
@@ -16,10 +16,11 @@
 
 | ✅ Built so far | ▶ Build next (main stream) |
 | :--- | :--- |
-| Landing site: 3D hero, fly-through workflow transition, full home page | **Dashboard backend `aerofarex-core`**: FastAPI + SQLite on Railway |
-| Public fare checker `/fares` + traveller accounts `/account` (mock data, mock auth) | **Collector**: Scrapy + Scrapling (+ Playwright only where a session is needed) → raw archive → parse → validate → SQLite |
-| Analyst dashboard: shell, auth, request-access, login page, **Overview** (mock API with real index maths) | **Index engine**: Jevons → booking-weighted chained Laspeyres → attribution, published nightly |
-| Design tokens, shared TS API contracts, Firestore rules | Swap both frontends from mock to the real API |
+| Landing site: 3D hero, fly-through workflow transition, full home page | **First real adapter**: pick a source, confirm permission, find its fare request (§4.5), implement `parse` on saved fixtures |
+| Public fare checker `/fares` + traveller accounts `/account` (mock data, mock auth) | **Swap both frontends** to the real API (`NEXT_PUBLIC_USE_MOCK=false`; `/fares` → `/api/v1/public/fares/search`) |
+| Analyst dashboard: shell, auth, request-access, login page, **Overview** (mock API with real index maths) | **Deploy** `aerofarex-core` to Railway (config ready: `railway.json`, Dockerfile, Litestream) |
+| Design tokens, shared TS API contracts, Firestore rules | Dashboard P1 pages (Attribution, Routes, Lead time, Quality, Health, Methodology) |
+| **Backend `aerofarex-core`**: FastAPI + SQLite, index engine, every analyst + public endpoint, scheduler, collector pipeline (§3.4) | |
 
 Full detail: [§3 What is done](#3-what-is-done-detailed) · [§4 Next task](#4--next-task--dashboard-backend-the-main-stream) · [§5 Remaining](#5-what-is-remaining-prioritised)
 
@@ -57,7 +58,7 @@ fuel + airport fees + GST + platform fee, and publishes three indices: **AFI** (
 | :--- | :--- | :--- | :--- |
 | Public website + fare checker | `landing/frontend` | Everyone / travellers | Built (fare data mocked) |
 | Analyst dashboard | `dashboard/frontend` | NSO, RBI, DGCA, MoCA analysts | Shell + Overview built on mock data |
-| Backend API + collector | `dashboard/backend`, `landing/backend`, `services/collector` | — | **Not started** (only READMEs) |
+| Backend API + collector | `dashboard/backend`, `landing/backend`, `services/collector` | — | Built and tested (demo data); collector has **no source enabled** yet (needs permission + endpoint) |
 
 ---
 
@@ -116,6 +117,37 @@ fuel + airport fees + GST + platform fee, and publishes three indices: **AFI** (
 - `packages/shared-types/index.ts`: full TypeScript API contracts (index, attribution, routes, observations, lead time, coverage, health).
 - `.gitignore`: `*firebase-adminsdk*.json` added (never commit the service-account key).
 - `PRD.md` and `TRD.md` updated to v2.2 (SQLite, Railway, Firebase, access model, fare checker, collector stack, new tokens, Part H).
+- `packages/shared-types`: added `IndexVintage`, `Methodology`, and the `Public*` types for the public API.
+
+### 3.4 Backend — `aerofarex-core` (Python 3.11, uv workspace: root `pyproject.toml`)
+One service, three packages: `dashboard/backend` (`server`: FastAPI app, index engine, analyst API, scheduler),
+`landing/backend` (`public_api`, mounted at `/api/v1/public`), `services/collector` (`collector`).
+Details: [dashboard/backend README](./dashboard/backend/README.md) · [collector README](./services/collector/README.md).
+- **Database** (`infra/db/migrations`): SQLite, STRICT tables, append-only triggers on raw data, observations,
+  components, snapshots, contributions and the audit log (tested: UPDATE/DELETE fail). Migration runner in
+  `server/db/migrate.py`.
+- **Index engine** (`server/econometrics`): Jevons cells with carry-forward imputation, booking-curve-weighted
+  Laspeyres, ANC basket, quality/coverage, attribution on 5 axes (reconciles to < 1e-9). Publication writes a
+  **new vintage** each time (`/index/vintages/{date}`), never edits.
+- **Analyst API**: every TRD Part D endpoint, incl. methodology, vintages, CSV and SDMX-JSON export. Firebase
+  ID-token + `role ∈ {ANALYST, ADMIN}` on every route; `AUTH_DEV_ROLE` for local preview (refused in production).
+- **Public API**: `latest`, `methodology`, `routes/summary`, `fares/search`; cached, rate-limited, no auth.
+  **Fare search returns sample data** (`sample: true`), a bit-exact port of `landing/frontend/src/data/fares.ts`.
+- **Parity with the mock (M2–M4 proven)**: `aerofarex seed-demo` loads a bit-exact Python port of `seed.ts`;
+  `tests/test_parity.py` compares every endpoint against the TypeScript mock's own output
+  (`tests/fixtures/mock_parity.json`, regenerate with `node dashboard/backend/tests/parity/export_mock.mjs`).
+  Latest demo day: AFI 101.4497, TCT-AFI 113.0710 — identical to the mock.
+- **Collector** (`services/collector`): Scrapy fetch with all D7 etiquette in one place (declared UA, robots.txt,
+  1 request/domain, 3.5 s jitter, retries, no cookies/proxies), raw archive (gzip, SHA-256, per-source batch hash
+  chain; local dir or Firebase Storage, create-only), parse → validate (add-up = INVALID, IQR outliers + phantom
+  fares = FLAGGED) → load, circuit breaker (a block opens it at once), `collection_runs`, Firestore health push.
+  The five source adapters are **not configured** (`configured = False`) until endpoint + permission (§4.5).
+- **Scheduler**: APScheduler in-process, IST: collection at 02:30/05:30/13:00/19:00 in a child process,
+  publication at 20:00.
+- **Deploy config**: `infra/docker/core.Dockerfile` (built and smoke-tested locally), `railway.json`
+  (healthcheck `/healthz`, 1 replica), Litestream to Firebase Storage (`infra/litestream/`). Not deployed yet.
+- **Tests**: `uv run pytest` — 113 tests (schema guarantees, maths, auth, error envelope, contract field names vs
+  shared-types, parity, public API, collector end to end against a local server).
 
 ---
 
@@ -193,14 +225,14 @@ dashboard/backend/server/
 
 | # | Milestone | Done when |
 | :- | :--- | :--- |
-| M1 | FastAPI skeleton + SQLite schema/migrations + append-only triggers + health endpoint | `pytest` proves UPDATE/DELETE on raw/observations fails; `/api/v1/health` returns the envelope |
-| M2 | Load the **existing mock seed** into SQLite (port `seed.ts` logic or export JSON) | DB has the same 30 days the dashboard mock shows |
-| M3 | Econometrics in Python (Jevons, weighted Laspeyres, attribution) | Python AFI/TCT-AFI for the seed **match the mock's numbers** (≈101.4 / 113.1 on 27 Sep) and attribution reconciles (< 1e-4) |
-| M4 | Analyst routers for every TRD Part D endpoint + Firebase token/role check | Dashboard runs with `NEXT_PUBLIC_USE_MOCK=false` and looks identical |
-| M5 | Collector skeleton + **one real adapter end-to-end** (fetch → archive → parse → validate → load) | One source's real fares land in SQLite 4×/day; parser tests pass on archived fixtures |
-| M6 | Scheduler + nightly publication + Firestore health | Index publishes unattended; Source health shows live circuit states |
-| M7 | Remaining adapters (one at a time) + public fare-search endpoint for `/fares` | Landing fare checker shows real prices |
-| M8 | Deploy to Railway (volume, backups, Litestream) + Firebase Hosting | Public URLs live |
+| M1 ✅ | FastAPI skeleton + SQLite schema/migrations + append-only triggers + health endpoint | `pytest` proves UPDATE/DELETE on raw/observations fails; `/api/v1/health` returns the envelope |
+| M2 ✅ | Load the **existing mock seed** into SQLite (port `seed.ts` logic or export JSON) | DB has the same 30 days the dashboard mock shows |
+| M3 ✅ | Econometrics in Python (Jevons, weighted Laspeyres, attribution) | Python AFI/TCT-AFI for the seed **match the mock's numbers** (≈101.4 / 113.1 on 27 Sep) and attribution reconciles (< 1e-4) |
+| M4 ✅ | Analyst routers for every TRD Part D endpoint + Firebase token/role check | Dashboard runs with `NEXT_PUBLIC_USE_MOCK=false` and looks identical |
+| M5 ◐ | Collector skeleton + **one real adapter end-to-end** (fetch → archive → parse → validate → load) | Pipeline done and tested end to end on a local server; **real adapter pending permission + endpoint** |
+| M6 ✅ | Scheduler + nightly publication + Firestore health | Scheduler, publication, circuit breaker, health push built; live once a source runs |
+| M7 ◐ | Remaining adapters (one at a time) + public fare-search endpoint for `/fares` | Endpoint built (sample data); adapters pending |
+| M8 ◐ | Deploy to Railway (volume, backups, Litestream) + Firebase Hosting | Dockerfile + `railway.json` + Litestream ready, image builds and runs; not deployed |
 
 ### 4.5 Before writing an adapter (per source)
 1. Check the site's terms; prefer permission or a data agreement (PRD §5.1, decision D7).
@@ -214,17 +246,19 @@ dashboard/backend/server/
 ## 5. What is REMAINING (prioritised)
 
 ### P0 — to make it real (detailed plan in [§4](#4--next-task--dashboard-backend-the-main-stream))
-1. **Backend `aerofarex-core`** (FastAPI): SQLite schema + migrations (TRD Part E, with append-only triggers), analyst routers matching `packages/shared-types`, public routers incl. `GET /api/v1/public/fares/search`, Firebase token + role verification on every analyst request, APScheduler jobs, Litestream + Railway backups, `railway.json`.
-2. **Collector** (`services/collector`): Scrapy project skeleton, raw archive (SHA-256 + batch hash chain → Firebase Storage), Pydantic schema with "components add up to total" check, IQR outliers, one adapter end-to-end first (find each source's fare request via DevTools; confirm permission).
+1. **First real adapter** (`services/collector/collector/adapters/sources.py`, checklist in its docstring): confirm permission, find the fare request (§4.5), save fixtures, write `parse`, set `configured = True`, add to `ENABLED_SOURCES`.
+2. **Set `BASE_DATE`** to the first day on which every route × window was collected (publication refuses an incomplete base period). The demo seed uses 2026-09-01.
+3. **Deploy `aerofarex-core` to Railway**: volume at `/data`, variables from `dashboard/backend/.env.example` (`ENV=production`, `FIREBASE_PROJECT_ID`, `CORS_ORIGINS`, `GOOGLE_APPLICATION_CREDENTIALS_JSON`, `LITESTREAM_GCS_BUCKET`, `RAW_ARCHIVE_URL=gs://…`).
 3. **Firebase console setup**: enable Email/Password (+ Google) sign-in, create Firestore, deploy `infra/firebase/firestore.rules`, grant yourself `ANALYST` via `set-role`, then set `VITE_MOCK_AUTH=false` and clear `NEXT_PUBLIC_AUTH_DEV_ROLE`.
-4. **Wire frontends to the API**: dashboard `NEXT_PUBLIC_USE_MOCK=false`; landing fare checker → public fares endpoint.
+4. **Wire frontends to the API**: dashboard `NEXT_PUBLIC_USE_MOCK=false` + `NEXT_PUBLIC_API_BASE`; landing fare checker → `/api/v1/public/fares/search` (same data, snake_case fields: `PublicFareSearch`).
 
 ### P1 — dashboard pages (placeholders exist, component kit is ready)
 Attribution (waterfall, 5 axes, reconciliation banner) · Routes + route detail (base vs total, fee composition, carriers, observation table + **audit drawer**) · Lead time (heatmap, price curve, booking weights) · Data quality (coverage trend, imputation, missing reasons, outliers) · Source health (live Firestore circuit states, run log) · Methodology.
 
 ### P2 — later
 - Admin tools: approve access requests in-app, source pause/resume, revision (vintage) publishing, audit log (needs a backend endpoint; the Admin key can't live in the browser).
-- Carriers / Components (ANC-AFI) / Cost comparison pages; SDMX export.
+- Carriers / Components (ANC-AFI) / Cost comparison pages.
+- Methodology not yet in code: hedonic quality adjustment (TRD B §4), monthly chaining (needs a 2nd month of live data), MAD surge alerts, ATF fuel feed for the attribution driver split, re-parse of archived payloads after a parser fix.
 - Dashboard dark mode (tokens partly exist, not wired).
 - Price alerts for saved routes; more routes; more OTAs (each needs an adapter + permission).
 - Deploy: Firebase Hosting for both frontends; Railway service.
@@ -234,6 +268,8 @@ Attribution (waterfall, 5 axes, reconciliation banner) · Routes + route detail 
 - Valty (hero font) is a demo licence; Anthropic Serif licence to confirm before public launch.
 - Fare checker platforms EaseMyTrip/ixigo are sample data only (not in the collector plan yet).
 - If `NODE_ENV=production` is set in your shell, `npm install` skips dev dependencies: use `npm install --include=dev`.
+- Backend observation schema accepts carrier `ZZ` (failed OTA fetch, no airline to name); add it to the TS `CarrierCode` union before an OTA adapter goes live.
+- ANC-AFI in the backend differs from the mock by < 0.001 points (ancillary prices stored as integer paise).
 
 ---
 
@@ -247,6 +283,12 @@ cd landing/frontend && npx vite
 
 # Analyst dashboard → http://localhost:3000
 cd dashboard/frontend && npx next dev
+
+# Backend → http://localhost:8000/docs   (Python 3.11 + uv)
+uv sync --all-packages             # from repo root
+uv run aerofarex seed-demo         # dev only: the dashboard's demo data, published
+uv run aerofarex serve --reload
+uv run pytest                      # all backend + collector tests
 ```
 
 **Env files** (gitignored `.env.local`; templates in `.env.example`):
@@ -259,6 +301,10 @@ cd dashboard/frontend && npx next dev
 | dashboard | `NEXT_PUBLIC_FIREBASE_*` | Firebase web config |
 | dashboard | `NEXT_PUBLIC_AUTH_DEV_ROLE` | `ADMIN`/`ANALYST` = skip Firebase in `next dev` only |
 | dashboard | `NEXT_PUBLIC_LANDING_URL` | "Back to website" link target |
+| backend | `DATABASE_URL`, `RAW_ARCHIVE_URL` | SQLite file and raw archive (defaults under `data/`) |
+| backend | `AUTH_DEV_ROLE` | `ADMIN` = accept tokenless requests locally (pairs with `NEXT_PUBLIC_AUTH_DEV_ROLE`) |
+| backend | `FIREBASE_PROJECT_ID`, `CORS_ORIGINS`, `BASE_DATE`, `SCHEDULER_ENABLED` | See `dashboard/backend/.env.example` |
+| collector | `ENABLED_SOURCES` | Sources to collect (only configured adapters run) |
 
 Firebase web config values are public identifiers (safe in `.env.local`). The **service-account JSON is secret** — keep it outside the repo.
 
@@ -281,7 +327,8 @@ Firebase web config values are public identifiers (safe in `.env.local`). The **
 
 | Date | Commit | Change |
 | :--- | :--- | :--- |
-| 2026-09-28 | (next commit) | PRD/TRD → v2.2; `Project_context.md` created (at-a-glance, reference map to TRD/READMEs, §4 next task: dashboard backend + collector plan); README points here. |
+| 2026-09-29 | (next commit) | Backend `aerofarex-core` v1: SQLite schema + append-only triggers, index engine, every analyst + public endpoint, bit-exact demo seed with parity tests against the TS mock, scheduler, collector pipeline (Scrapy, raw archive + hash chain, validation, circuit breaker), Docker/Railway/Litestream config, 113 tests. |
+| 2026-09-28 | `e2d18ce` | PRD/TRD → v2.2; `Project_context.md` created (at-a-glance, reference map to TRD/READMEs, §4 next task: dashboard backend + collector plan); README points here. |
 | 2026-09-28 | `0df0262` | Dashboard v1 (shell, auth, Overview, mock API, login with photo/glass logo, request access, back-to-website) and user view v1 (`/fares`, `/account`, mock auth, Firestore rules, 5-search guest limit, rebuilt fare table with square cards). |
 | 2026-09-27 | `153c7cb` | Fly-through transition revamp: light sky, workflow panel on background, performance fixes. |
 | 2026-09-27 | `a404eb3`/`4fff40c` | Workflow animation in transition; merge with teammate's receipt work (receipt card later removed). |

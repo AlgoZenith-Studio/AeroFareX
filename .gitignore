@@ -73,3 +73,8 @@ docs/REVAMPED_PRESENTATION_SUMMARY.md
 skills-lock.json
 
 
+
+# Backend local data (SQLite database, WAL files, raw payload archive)
+data/*.db
+data/*.db-*
+data/raw/

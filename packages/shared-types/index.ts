@@ -226,3 +226,109 @@ export interface HealthSnapshot {
   next_run_at: string;
   next_publication_at: string;
 }
+
+// ---------------------------------------------------------------- methodology & vintages
+/** GET /index/vintages/{date}: every published version of a day (revisions never edit). */
+export interface IndexVintage {
+  series: SeriesName;
+  date: string;
+  vintage: number;
+  value: number;
+  coverage: number;
+  imputation_rate: number;
+  provenance: Provenance;
+  methodology_version: string;
+  calculated_at: string;
+  is_current: boolean;
+}
+
+export interface MethodologyWeight {
+  key: string;
+  label: string;
+  weight: number;
+}
+
+/** GET /methodology */
+export interface Methodology {
+  methodology_version: string;
+  base_period: string;
+  formula: string;
+  elementary_aggregate: string;
+  route_weights: MethodologyWeight[];
+  window_weights: MethodologyWeight[];
+  outlier_rule: string;
+  imputation_rules: Record<ImputationRule, string>;
+  attribution: string;
+  quality_thresholds: Record<QualityStatus, string>;
+  notes: string[];
+}
+
+// ---------------------------------------------------------------- public API (/api/v1/public/*)
+/** GET /public/latest?series=AFI|TCT-AFI */
+export interface PublicLatest {
+  series: 'AFI' | 'TCT-AFI';
+  date: string;
+  value: number;
+  previous_value: number;
+  change: number;
+  change_pct: number;
+  base_period: string;
+  drip_gap_points: number;
+  drip_gap_pct: number;
+  quality: QualityMetadata;
+}
+
+/** GET /public/methodology */
+export interface PublicMethodology {
+  methodology_version: string;
+  base_period: string;
+  summary: string;
+  sections: { title: string; body: string }[];
+}
+
+/** GET /public/routes/summary */
+export interface PublicRouteSummary {
+  route_id: RouteId;
+  label: string;
+  origin: string;
+  destination: string;
+  pax_share: number;
+  advertised_paise: number;
+  total_paise: number;
+  added_paise: number; // total minus advertised
+  added_pct: number;
+  change_24h_pct: number;
+  date: string;
+  provenance: Provenance;
+}
+
+export interface PublicOffer {
+  platform: { id: string; name: string; kind: 'AIRLINE' | 'OTA' };
+  advertised_paise: number;
+  fuel_paise: number;
+  airport_paise: number; // UDF + PSF
+  gst_paise: number;
+  platform_paise: number;
+  total_paise: number;
+}
+
+/** GET /public/fares/search?from=&to=&date=  (404 ROUTE_NOT_TRACKED for other routes) */
+export interface PublicFareSearch {
+  from: string;
+  to: string;
+  date: string;
+  days_ahead: number;
+  flights: {
+    carrier: string;
+    carrier_code: string;
+    flight_no: string;
+    depart: string; // HH:MM
+    arrive: string;
+    duration: string;
+    offers: PublicOffer[]; // cheapest total first
+  }[];
+  by_days_ahead: { days: number; label: string; cheapest_paise: number }[];
+  seen_at: string | null; // last collection slot
+  /** true until the collector has flight-level offers for every platform. */
+  sample: boolean;
+}

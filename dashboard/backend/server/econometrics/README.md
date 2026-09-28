@@ -1,11 +1,14 @@
 # server/econometrics
 
-The statistical core:
+The statistical core (TRD Part B), pure functions with no I/O:
 
-  jevons.py            Elementary aggregation (geometric mean) per route-window cell
-  laspeyres.py         Chained DGCA-weighted Laspeyres index computation
-  booking_curve.py     Offer-to-transaction correction (T+1..T+45 empirical weights)
-  hedonic.py           Quality-adjustment regression (model h-1.2)
-  attribution.py       Movement waterfall decomposition with reconciliation assertion
-  outliers.py          1.5x IQR cleaning pipeline + imputation rules
-  surge.py             3.5x MAD surge-alert detection (distinct from the outlier filter)
+  basket.py      advance windows and the booking curve ω_k (T+1 … T+45)
+  jevons.py      elementary aggregation: geometric mean per route-window cell
+  engine.py      cells (with carry-forward imputation), Laspeyres index, ANC basket, quality,
+                 attribution on five axes (route, carrier, window, component, driver), route
+                 aggregates, lead-time cells
+  outliers.py    1.5 × IQR screening on log fares (used by the collector)
+  jsnum.py       JavaScript number semantics for bit-exact parity with the TS spec
+
+Not built yet: hedonic quality adjustment (§4) and monthly chaining (§1; needs a second month
+of live data), MAD surge alerts.

@@ -1,0 +1,22 @@
+# Python workspace for the backend service `aerofarex-core` (TRD Part A/H).
+# One deployable service, three packages kept in the folders the TRD assigns them:
+#   dashboard/backend   -> `server`      FastAPI app, analyst API, index engine, scheduler
+#   landing/backend     -> `public_api`  public read-only router, mounted by `server`
+#   services/collector  -> `collector`   fetch -> raw archive -> parse -> validate -> SQLite
+#
+#   uv sync --all-packages      # create .venv with all three + dev tools
+#   uv run pytest               # run every backend test
+[tool.uv.workspace]
+members = ["dashboard/backend", "landing/backend", "services/collector"]
+
+[tool.uv.sources]
+aerofarex-core = { workspace = true }
+aerofarex-public-api = { workspace = true }
+aerofarex-collector = { workspace = true }
+
+[dependency-groups]
+dev = ["pytest>=8.3", "httpx>=0.28"]
+
+[tool.pytest.ini_options]
+testpaths = ["dashboard/backend/tests", "services/collector/tests"]
+addopts = "-q"

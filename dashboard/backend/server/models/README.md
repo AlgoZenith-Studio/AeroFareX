@@ -1,6 +1,6 @@
 # server/models
 
-SQLAlchemy ORM models mirroring infra/db/migrations: sources, source_policies, routes,
-route_weights, carriers, raw_observations (append-only), fare_observations (hypertable),
-fare_components, ancillary_observations, index_snapshots (hypertable), index_contributions,
-index_revisions, adapter_health, audit_events.
+SQLAlchemy Core tables mirroring `infra/db/migrations`: routes, route_weights, carriers, sources,
+raw_observations, fare_observations, fare_components, ancillary_observations, collection_runs,
+source_health, index_snapshots, index_contributions, audit_events. The SQL files own the DDL,
+constraints and append-only triggers; these are for queries and inserts.
