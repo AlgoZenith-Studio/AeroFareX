@@ -36,7 +36,7 @@ export const RecentFailuresCard: React.FC<{
 
         <span className="inline-flex items-center gap-1.5 rounded-full bg-status-warning/20 px-3 py-1 text-xs font-bold text-status-warning">
           <AlertTriangle size={13} aria-hidden />
-          {incidents.length > 0 ? `${incidents.length} Active Incident` : 'No Active Incidents'}
+          {incidents.length > 0 ? <><span className="num font-bold">{incidents.length}</span> Active Incident</> : 'No Active Incidents'}
         </span>
       </header>
 

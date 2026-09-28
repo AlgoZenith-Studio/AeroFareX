@@ -6,7 +6,7 @@ import clsx from 'clsx';
 import { ArrowUpRight, TrendingDown, TrendingUp } from 'lucide-react';
 import type { IndexLatest, QualityMetadata } from '@aerofarex/shared-types';
 import { useIndexFamily } from '@/lib/api/hooks';
-import { points, signed } from '@/lib/format';
+import { points, renderValueWithNum, signed } from '@/lib/format';
 import { QualityBadge } from '@/components/ui/QualityBadge';
 import { ErrorState, Skeleton } from '@/components/ui/States';
 import { hasRole, useAuth } from '@/lib/auth/AuthProvider';
@@ -27,7 +27,7 @@ const KpiCard: React.FC<Kpi> = ({ title, value, change, direction, note, href, q
   return (
     <article className={clsx('flex min-h-[164px] flex-col p-[clamp(16px,1.4vw,20px)]', hero ? 'card-hero' : 'card')}>
       <div className="flex items-start justify-between gap-3">
-        <h2 className="text-[17px] leading-tight">{title}</h2>
+        <h2 className="font-display text-[17px] leading-tight">{title}</h2>
         <Link
           href={href}
           aria-label={`Open ${title}`}
@@ -36,12 +36,12 @@ const KpiCard: React.FC<Kpi> = ({ title, value, change, direction, note, href, q
           <ArrowUpRight size={17} aria-hidden />
         </Link>
       </div>
-      <p className="font-display num mt-3 text-[clamp(32px,2.8vw,44px)] leading-none">{value}</p>
+      <p className="font-display mt-3 text-[clamp(32px,2.8vw,44px)] leading-none">{renderValueWithNum(value)}</p>
       <p className={clsx('mt-3 flex items-center gap-1.5 text-xs', hero ? 'text-text-1' : 'text-text-2')}>
         <span className={clsx('inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 font-bold', hero ? 'bg-white/60 text-black' : 'bg-surface-tint text-sky-900')}>
-          <Trend size={12} aria-hidden />{change}
+          <Trend size={12} aria-hidden />{renderValueWithNum(change)}
         </span>
-        {note}
+        {renderValueWithNum(note)}
       </p>
       <QualityBadge quality={quality} onBand={hero} className="mt-auto pt-3" />
     </article>

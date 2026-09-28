@@ -33,7 +33,7 @@ export const QualityBadge: React.FC<{ quality: QualityMetadata; onBand?: boolean
       <span aria-hidden>·</span>
       <span>{quality.provenance === 'REAL' ? 'Real' : 'Simulated'}</span>
       <span aria-hidden>·</span>
-      <span>{quality.is_provisional ? 'Provisional' : `Vintage ${quality.vintage}`}</span>
+      <span>{quality.is_provisional ? 'Provisional' : <>Vintage <span className="num font-bold">{quality.vintage}</span></>}</span>
     </span>
   );
 };

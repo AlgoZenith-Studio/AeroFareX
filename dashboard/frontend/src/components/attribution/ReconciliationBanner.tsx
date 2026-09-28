@@ -82,11 +82,11 @@ export const ReconciliationBanner: React.FC<{
                   <span>{a.axis} AXIS</span>
                   <span>{a.passed ? '✓' : '⚠️'}</span>
                 </div>
-                <div className="font-display num text-sm font-bold text-text-1">
-                  Sum: {signed(a.sum, 2)} pts
+                <div className="text-sm font-bold text-text-1">
+                  Sum: <span className="num font-bold">{signed(a.sum, 2)}</span> pts
                 </div>
                 <div className="text-[11px] text-text-3 mt-1">
-                  Delta: {signed(delta, 2)} · Gap: {points(a.diff, 4)} pts
+                  Delta: <span className="num font-bold">{signed(delta, 2)}</span> · Gap: <span className="num font-bold">{points(a.diff, 4)}</span> pts
                 </div>
               </div>
             ))}

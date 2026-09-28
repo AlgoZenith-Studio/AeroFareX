@@ -4,7 +4,7 @@ import React from 'react';
 import clsx from 'clsx';
 import { CheckCircle2, TrendingDown, TrendingUp, AlertTriangle } from 'lucide-react';
 import type { Attribution, QualityMetadata } from '@aerofarex/shared-types';
-import { points, signed } from '@/lib/format';
+import { points, renderValueWithNum, signed } from '@/lib/format';
 import { QualityBadge } from '@/components/ui/QualityBadge';
 import { Skeleton } from '@/components/ui/States';
 
@@ -26,7 +26,7 @@ const MetricCard: React.FC<MetricCardProps> = ({
   return (
     <article className={clsx('flex min-h-[164px] flex-col p-[clamp(16px,1.4vw,20px)]', hero ? 'card-hero' : 'card')}>
       <div className="flex items-start justify-between gap-3">
-        <h2 className="text-[17px] leading-tight font-medium">{title}</h2>
+        <h2 className="font-display text-[17px] leading-tight font-medium">{title}</h2>
         {hero && reconciled !== undefined && (
           <span
             className={clsx(
@@ -50,14 +50,14 @@ const MetricCard: React.FC<MetricCardProps> = ({
         className={clsx(
           'font-display mt-3 leading-tight truncate max-w-full overflow-hidden whitespace-nowrap',
           value.length > 10
-            ? 'text-[clamp(18px,1.6vw,24px)] font-bold tracking-tight'
+            ? 'text-[clamp(18px,1.6vw,24px)] tracking-tight'
             : value.length > 6
-            ? 'text-[clamp(22px,2.1vw,30px)] font-bold'
-            : 'num text-[clamp(32px,2.8vw,44px)]',
+            ? 'text-[clamp(22px,2.1vw,30px)]'
+            : 'text-[clamp(32px,2.8vw,44px)]',
         )}
         title={value}
       >
-        {value}
+        {renderValueWithNum(value)}
       </p>
       <p className={clsx('mt-3 flex items-center gap-1.5 text-xs', hero ? 'text-text-1' : 'text-text-2')}>
         <span
@@ -67,9 +67,9 @@ const MetricCard: React.FC<MetricCardProps> = ({
           )}
         >
           <Trend size={12} aria-hidden />
-          {change}
+          {renderValueWithNum(change)}
         </span>
-        {note}
+        {renderValueWithNum(note)}
       </p>
       <QualityBadge quality={quality} onBand={hero} className="mt-auto pt-3" />
     </article>

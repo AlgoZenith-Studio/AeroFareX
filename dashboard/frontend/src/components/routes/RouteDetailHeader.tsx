@@ -40,7 +40,7 @@ export const RouteDetailHeader: React.FC<{
                 </span>
               </div>
               <p className="text-xs text-text-3 mt-0.5">
-                DGCA Passenger Weight: <strong className="text-text-1">{pct(route.pax_share, 1)}</strong> ·
+                DGCA Passenger Weight: <strong className="num font-bold text-text-1">{pct(route.pax_share, 1)}</strong> ·
                 Route ID: <code className="font-mono text-text-2">{route.route_id}</code>
               </p>
             </div>
@@ -53,7 +53,7 @@ export const RouteDetailHeader: React.FC<{
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <div className="rounded-2xl bg-surface-alt p-4">
           <span className="text-xs text-text-3 font-semibold">ADVERTISED BASE FARE</span>
-          <p className="font-display num text-2xl font-bold mt-1 text-text-1">
+          <p className="num font-bold text-2xl mt-1 text-text-1">
             {inr(route.base_fare_paise)}
           </p>
           <span className="text-[11px] text-text-3">Base fare (excluding taxes & fees)</span>
@@ -61,7 +61,7 @@ export const RouteDetailHeader: React.FC<{
 
         <div className="rounded-2xl bg-surface-alt p-4">
           <span className="text-xs text-text-3 font-semibold">TOTAL PAYABLE FARE</span>
-          <p className="font-display num text-2xl font-bold mt-1 text-text-1">
+          <p className="num font-bold text-2xl mt-1 text-text-1">
             {inr(route.total_fare_paise)}
           </p>
           <span className="text-[11px] text-text-3">Final checkout price</span>
@@ -69,18 +69,18 @@ export const RouteDetailHeader: React.FC<{
 
         <div className="rounded-2xl bg-status-warning/10 border border-status-warning/30 p-4">
           <span className="text-xs text-status-warning font-bold">HIDDEN-FEE GAP</span>
-          <p className="font-display num text-2xl font-bold mt-1 text-status-warning">
+          <p className="num font-bold text-2xl mt-1 text-status-warning">
             +{inr(hiddenFee)}
           </p>
           <span className="text-[11px] text-status-warning font-semibold">
-            +{hiddenFeePct}% above base fare
+            <span className="num font-bold">+{hiddenFeePct}%</span> above base fare
           </span>
         </div>
 
         <div className="rounded-2xl bg-surface-alt p-4">
           <span className="text-xs text-text-3 font-semibold">24H PRICE MOVEMENT</span>
           <p
-            className={`font-display num text-2xl font-bold mt-1 ${
+            className={`num text-2xl font-bold mt-1 ${
               route.change_24h_pct > 0
                 ? 'text-status-warning'
                 : route.change_24h_pct < 0

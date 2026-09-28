@@ -103,7 +103,7 @@ export const LeadTimeHeatmapCard: React.FC<{
                   <th key={w} className="px-4 py-3 text-center text-xs font-bold text-text-2">
                     <div>{w}</div>
                     <div className="text-[10px] text-text-3 font-normal mt-0.5">
-                      {pct(matrix?.weights[w] ?? 0, 0)} weight
+                      <span className="num font-bold">{pct(matrix?.weights[w] ?? 0, 0)}</span> weight
                     </div>
                   </th>
                 ))}
@@ -141,7 +141,7 @@ export const LeadTimeHeatmapCard: React.FC<{
                             </>
                           ) : (
                             <>
-                              <span className="font-display num text-[15px] font-bold text-text-1">
+                              <span className="num text-[15px] font-bold text-text-1">
                                 {fare !== null && fare !== undefined ? inr(fare) : '–'}
                               </span>
                               <span className="text-[11px] text-text-3 font-medium mt-0.5">

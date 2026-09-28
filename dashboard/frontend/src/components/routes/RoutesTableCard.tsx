@@ -121,7 +121,7 @@ export const RoutesTableCard: React.FC<{
               return (
                 <div className="flex flex-col items-end">
                   <span className="num font-bold text-status-warning">{inr(diff)}</span>
-                  <span className="text-[10px] text-text-3">+{pctDiff.toFixed(1)}% above base</span>
+                  <span className="text-[10px] text-text-3"><span className="num font-bold">+{pctDiff.toFixed(1)}%</span> above base</span>
                 </div>
               );
             },

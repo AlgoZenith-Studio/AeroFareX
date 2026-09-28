@@ -110,7 +110,7 @@ export const RouteCarrierComparisonCard: React.FC<{
             render: (r) => (
               <span
                 className={clsx(
-                  'rounded-full px-2.5 py-0.5 text-xs font-bold',
+                  'num font-bold rounded-full px-2.5 py-0.5 text-xs',
                   r.availabilityRate >= 90
                     ? 'bg-surface-tint text-sky-900'
                     : r.availabilityRate >= 75

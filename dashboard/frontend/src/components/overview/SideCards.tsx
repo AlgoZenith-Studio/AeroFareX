@@ -60,7 +60,7 @@ export const PublicationCard: React.FC<{ className?: string }> = ({ className })
             ].map(([k, v]) => (
               <div key={k} className="rounded-xl bg-surface-alt px-3 py-2">
                 <dt className="text-text-3">{k}</dt>
-                <dd className="font-display num mt-0.5 text-[15px] text-text-1">{v}</dd>
+                <dd className="num font-bold mt-0.5 text-[15px] text-text-1">{v}</dd>
               </div>
             ))}
           </dl>
@@ -97,7 +97,7 @@ export const RoutesListCard: React.FC<{ className?: string }> = ({ className }) 
                 <span className="min-w-0 flex-1">
                   <span className="block text-sm font-medium">{r.origin} → {r.destination}</span>
                   <span className="block truncate text-xs text-text-3">
-                    {inr(r.total_fare_paise)} · {pct(r.pax_share)} weight
+                    <span className="num font-bold">{inr(r.total_fare_paise)}</span> · <span className="num font-bold">{pct(r.pax_share)}</span> weight
                   </span>
                 </span>
                 <span className="num text-xs font-medium text-text-2">{signed(r.change_24h_pct, 1, '%')}</span>
@@ -142,7 +142,7 @@ export const NextRunCard: React.FC<{ className?: string }> = ({ className }) => 
         <p className="mt-6 text-sm text-text-2">Schedule unavailable.</p>
       ) : (
         <>
-          <p className="font-display num mt-5 text-center text-[clamp(32px,2.6vw,42px)] leading-none" aria-live="off">
+          <p className="num font-bold mt-5 text-center text-[clamp(32px,2.6vw,42px)] leading-none" aria-live="off">
             {pad(Math.floor(left / 3600))}:{pad(Math.floor((left % 3600) / 60))}:{pad(left % 60)}
           </p>
           <p className="mt-2 text-center text-xs text-text-2">
@@ -161,7 +161,7 @@ export const NextRunCard: React.FC<{ className?: string }> = ({ className }) => 
                     )}
                     aria-hidden
                   />
-                  <span className={done ? 'font-bold text-text-1' : 'text-text-3'}>{slot}</span>
+                  <span className={clsx('num font-bold', done ? 'text-text-1' : 'text-text-3')}>{slot}</span>
                   <span className="sr-only">{done ? done.status.toLowerCase() : 'scheduled'}</span>
                 </li>
               );
@@ -173,7 +173,7 @@ export const NextRunCard: React.FC<{ className?: string }> = ({ className }) => 
               <span className="font-bold text-text-1">
                 {lastRun.status === 'SUCCESS' ? 'complete' : lastRun.status.toLowerCase()}
               </span>{' '}
-              · {lastRun.observations} fares
+              · <span className="num font-bold">{lastRun.observations}</span> fares
             </p>
           )}
         </>

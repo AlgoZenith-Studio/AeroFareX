@@ -47,7 +47,7 @@ export const CollectionRunsLogCard: React.FC<{
                     : 'bg-surface-alt text-text-3',
                 )}
               >
-                <Radar size={11} aria-hidden /> {slot} IST
+                <Radar size={11} aria-hidden /> <span className="num font-bold">{slot}</span> IST
               </span>
             );
           })}
@@ -68,7 +68,7 @@ export const CollectionRunsLogCard: React.FC<{
               <div>
                 <span className="block font-bold text-text-1">{r.run_id}</span>
                 <span className="block text-[11px] text-text-3">
-                  {r.slot} IST slot · {relativeTime(r.started_at)}
+                  <span className="num font-bold">{r.slot}</span> IST slot · {relativeTime(r.started_at)}
                 </span>
               </div>
             ),
@@ -77,14 +77,14 @@ export const CollectionRunsLogCard: React.FC<{
             key: 'started_at',
             header: 'Started At (IST)',
             sortValue: (r) => r.started_at,
-            render: (r) => istTime(r.started_at),
+            render: (r) => <span className="num font-bold">{istTime(r.started_at)}</span>,
           },
           {
             key: 'duration_s',
             header: 'Duration',
             align: 'right',
             sortValue: (r) => r.duration_s,
-            render: (r) => `${r.duration_s}s (${(r.duration_s / 60).toFixed(1)}m)`,
+            render: (r) => <><span className="num font-bold">{r.duration_s}s</span> (<span className="num font-bold">{(r.duration_s / 60).toFixed(1)}m</span>)</>,
           },
           {
             key: 'observations',

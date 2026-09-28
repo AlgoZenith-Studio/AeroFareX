@@ -83,7 +83,7 @@ export const RouteObservationsCard: React.FC<{
               key: 'departure_date',
               header: 'Departure Date',
               sortValue: (r) => r.departure_date,
-              render: (r) => shortDate(r.departure_date),
+              render: (r) => <span className="num font-bold">{shortDate(r.departure_date)}</span>,
             },
             {
               key: 'fare_family',
@@ -169,7 +169,7 @@ export const RouteObservationsCard: React.FC<{
                   </div>
                   <div className="rounded-xl bg-surface-alt p-3">
                     <span className="text-text-3 font-semibold block mb-0.5">FETCHED AT</span>
-                    <span className="font-bold text-text-1">{istTime(audit.fetched_at)} IST</span>
+                    <span className="font-bold text-text-1"><span className="num font-bold">{istTime(audit.fetched_at)}</span> IST</span>
                   </div>
                 </div>
 

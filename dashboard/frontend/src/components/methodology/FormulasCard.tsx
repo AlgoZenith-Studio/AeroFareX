@@ -172,12 +172,12 @@ export const FormulasCard: React.FC<{ className?: string }> = ({ className }) =>
         <p className="text-xs text-text-2 mb-4 leading-relaxed">{activeFormula.subtitle}</p>
 
         {/* Formula Math Display Box */}
-        <div className="mb-5 rounded-lg border border-line bg-white dark:bg-zinc-900 p-4 font-serif text-text-1 shadow-inner overflow-x-auto">
-          <div className="text-xs text-text-3 font-sans mb-1 uppercase tracking-wider font-semibold">Mathematical Notation</div>
+        <div className="mb-5 rounded-lg border border-line bg-white dark:bg-zinc-900 p-4 text-text-1 shadow-inner overflow-x-auto">
+          <div className="text-xs text-text-3 mb-1 uppercase tracking-wider font-semibold">Mathematical Notation</div>
           <div className="py-2 text-sm sm:text-base font-medium tracking-wide text-sky-900 dark:text-sky-300 font-mono whitespace-nowrap overflow-x-auto">
             {activeFormula.mathFormula}
           </div>
-          <div className="mt-2 border-t border-line/60 pt-2 font-sans text-xs text-text-2">
+          <div className="mt-2 border-t border-line/60 pt-2 text-xs text-text-2">
             <span className="font-bold text-text-1">Plain Text: </span>
             {activeFormula.plainFormula}
           </div>

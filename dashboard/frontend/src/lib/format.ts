@@ -1,3 +1,5 @@
+import React from 'react';
+
 /**
  * Formatting at the render boundary only (design rule 7: integer paise in state
  * and props; rupees appear only here).
@@ -27,3 +29,24 @@ export const relativeTime = (iso: string, now = Date.now()) => {
   if (hours < 48) return `${hours} h ago`;
   return `${Math.round(hours / 24)} days ago`;
 };
+
+/**
+ * Renders a string such that ONLY numeric tokens (digits, decimals, signed numbers, percentages)
+ * are wrapped in <span className="num font-bold"> (Google Sans Bold font), while preserving non-numeric
+ * text (labels, titles, units, names) in the surrounding container's font (AFX Serif / display font).
+ */
+export function renderValueWithNum(val: string | number | null | undefined): React.ReactNode {
+  if (val === null || val === undefined) return '';
+  const str = String(val);
+  if (!str) return str;
+
+  // Split string into numeric parts and non-numeric text parts
+  const parts = str.split(/([+-]?(?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?%?x?)/g);
+  return parts.map((part, index) => {
+    if (/^[+-]?(?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?%?x?$/.test(part)) {
+      return React.createElement('span', { key: index, className: 'num font-bold' }, part);
+    }
+    return React.createElement(React.Fragment, { key: index }, part);
+  });
+}
+

@@ -3,6 +3,7 @@
 import React from 'react';
 import clsx from 'clsx';
 import { BookOpenCheck, ShieldCheck, Clock, Layers } from 'lucide-react';
+import { renderValueWithNum } from '@/lib/format';
 
 interface MetricCardProps {
   title: string;
@@ -23,7 +24,7 @@ const MetricCard: React.FC<MetricCardProps> = ({
   return (
     <article className={clsx('flex min-h-[164px] flex-col p-[clamp(16px,1.4vw,20px)]', hero ? 'card-hero' : 'card')}>
       <div className="flex items-start justify-between gap-3">
-        <h2 className="text-[17px] leading-tight font-medium">{title}</h2>
+        <h2 className="font-display text-[17px] leading-tight font-medium">{title}</h2>
         {hero ? (
           <span className="inline-flex items-center gap-1 rounded-full bg-black/10 px-2.5 py-0.5 text-xs font-bold text-black">
             <ShieldCheck size={13} aria-hidden /> ACTIVE SPEC
@@ -44,14 +45,14 @@ const MetricCard: React.FC<MetricCardProps> = ({
         className={clsx(
           'font-display mt-3 leading-tight truncate max-w-full overflow-hidden whitespace-nowrap',
           value.length > 10
-            ? 'text-[clamp(18px,1.6vw,24px)] font-bold tracking-tight'
+            ? 'text-[clamp(18px,1.6vw,24px)] tracking-tight'
             : value.length > 6
-            ? 'text-[clamp(22px,2.1vw,30px)] font-bold'
-            : 'num text-[clamp(32px,2.8vw,44px)]',
+            ? 'text-[clamp(22px,2.1vw,30px)]'
+            : 'text-[clamp(32px,2.8vw,44px)]',
         )}
         title={value}
       >
-        {value}
+        {renderValueWithNum(value)}
       </p>
       <p className={clsx('mt-3 flex items-center gap-1.5 text-xs', hero ? 'text-text-1' : 'text-text-2')}>
         <span
@@ -60,9 +61,9 @@ const MetricCard: React.FC<MetricCardProps> = ({
             hero ? 'bg-white/60 text-black' : 'bg-surface-tint text-sky-900',
           )}
         >
-          {change}
+          {renderValueWithNum(change)}
         </span>
-        {note}
+        {renderValueWithNum(note)}
       </p>
     </article>
   );

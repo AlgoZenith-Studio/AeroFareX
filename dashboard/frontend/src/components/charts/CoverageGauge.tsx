@@ -45,7 +45,7 @@ export const CoverageGauge: React.FC<{ parts: GaugePart[]; centerValue: string; 
               <title>{`${s.label}: ${s.value}`}</title>
             </path>
           ))}
-          <text y={-26} textAnchor="middle" className="font-display num fill-text-1 text-[32px]">{centerValue}</text>
+          <text y={-26} textAnchor="middle" className="num font-bold fill-text-1 text-[32px]">{centerValue}</text>
           <text y={-6} textAnchor="middle" className="fill-text-3 text-[11px]">{centerLabel}</text>
         </g>
       </svg>

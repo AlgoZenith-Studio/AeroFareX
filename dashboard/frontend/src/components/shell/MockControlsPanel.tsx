@@ -41,12 +41,12 @@ export const MockControlsPanel: React.FC = () => {
         <button onClick={() => setOpen(false)} aria-label="Close" className="text-text-3 hover:text-text-1"><X size={18} /></button>
       </div>
       <label className="mt-4 block text-sm text-text-2">
-        Latency: <b className="num text-text-1">{controls.latencyMs} ms</b>
+        Latency: <b className="text-text-1"><span className="num font-bold">{controls.latencyMs}</span> ms</b>
         <input type="range" min={0} max={4000} step={50} value={controls.latencyMs}
           onChange={(e) => update({ latencyMs: Number(e.target.value) })} className="mt-1 w-full accent-[var(--sky-800)]" />
       </label>
       <label className="mt-3 block text-sm text-text-2">
-        Failure rate: <b className="num text-text-1">{Math.round(controls.failRate * 100)}%</b>
+        Failure rate: <b className="text-text-1"><span className="num font-bold">{Math.round(controls.failRate * 100)}%</span></b>
         <input type="range" min={0} max={1} step={0.05} value={controls.failRate}
           onChange={(e) => update({ failRate: Number(e.target.value) })} className="mt-1 w-full accent-[var(--sky-800)]" />
       </label>

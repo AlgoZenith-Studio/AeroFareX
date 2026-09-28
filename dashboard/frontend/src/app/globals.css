@@ -65,9 +65,16 @@
     background: var(--bg-sky-200);
     border: 1px solid var(--line-sky);
   }
-  /* Display serif for big numbers (landing: stats, ledger totals) */
+  
+  /* Display serif for headings and text titles */
   .font-display { font-family: var(--font-display); font-weight: 700; word-spacing: 0.06em; }
-  .num { font-variant-numeric: tabular-nums; }
+  
+  /* ONLY NUMBERS in the dashboard use Google Sans Bold font */
+  .num {
+    font-family: 'Google Sans', var(--font-sans), system-ui, -apple-system, sans-serif !important;
+    font-weight: 700 !important;
+    font-variant-numeric: tabular-nums;
+  }
 
   /* "Jelly" plate for content over photography: solid whitish gradient,
      glossy top rim, soft sky inner glow at the bottom edge. */
