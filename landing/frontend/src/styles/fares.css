@@ -323,6 +323,9 @@
 .account-page-back:hover { background: var(--sky-200); }
 .account-page-brand { padding: 0 var(--s-3); background: var(--sky-900); }
 .account-page-brand img { width: auto; height: 34px; }
+@media (min-width: 901px) {
+  .account-page-header { display: none; }
+}
 
 /* Account access fills a desktop viewport. The left panel uses the site sky image. */
 .account-access {
@@ -364,12 +367,35 @@
   background-position: center;
   background-size: cover;
 }
-.account-access-kicker {
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.17em;
-  color: var(--sky-900);
+.account-access-story-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-3);
 }
+.account-access-brand,
+.account-access-back {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 42px;
+  border-radius: var(--r-pill);
+  white-space: nowrap;
+}
+.account-access-brand {
+  padding: 0 var(--s-2);
+  background: color-mix(in srgb, var(--sky-900) 86%, transparent);
+}
+.account-access-brand img { width: auto; height: 32px; }
+.account-access-back {
+  gap: var(--s-2);
+  padding: 0 var(--s-4);
+  background: color-mix(in srgb, var(--white) 82%, transparent);
+  color: var(--sky-900);
+  font-size: var(--fs-xs);
+  font-weight: 700;
+}
+.account-access-back:hover { background: var(--white); }
 .account-access-copy { margin-top: auto; padding: var(--s-7) 0 var(--s-5); }
 .account-access-copy h1 {
   max-width: 13ch;

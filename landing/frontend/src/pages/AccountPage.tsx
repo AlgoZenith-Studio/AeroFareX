@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router';
-import { ArrowRight, BookmarkX, LockKeyhole, LogOut, RotateCcw, Search, Trash2 } from 'lucide-react';
+import { ArrowLeft, ArrowRight, BookmarkX, LockKeyhole, LogOut, RotateCcw, Search, Trash2 } from 'lucide-react';
 import { PageShell } from '../components/PageShell';
 import { AuthPanel } from '../components/AuthPanel';
 import { cityOf } from '../data/fares';
@@ -61,7 +61,14 @@ export const AccountPage: React.FC = () => {
         <section className="account-access" aria-labelledby="account-access-title">
           <div className="account-access-layout container">
             <div className="account-access-story">
-              <p className="account-access-kicker">YOUR ACCOUNT</p>
+              <div className="account-access-story-nav">
+                <Link className="account-access-back" to="/" onClick={() => window.scrollTo({ top: 0 })}>
+                  <ArrowLeft size={16} aria-hidden="true" /> Back to site
+                </Link>
+                <Link className="account-access-brand" to="/" aria-label="AeroFareX home" onClick={() => window.scrollTo({ top: 0 })}>
+                  <img src="/logo_long_v2.svg" alt="AeroFareX" />
+                </Link>
+              </div>
               <div className="account-access-copy">
                 <h1 id="account-access-title">Your searches,<br /><span className="grad">ready when you return.</span></h1>
                 <p>Save fare searches and routes in one place.</p>
