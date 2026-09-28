@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router';
-import { ArrowRight, Menu, UserRound, X } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Menu, UserRound, X } from 'lucide-react';
 import { NAV_LINKS } from '../data/nav';
 import { useUserAuth } from '../lib/userAuth';
 import { ANALYST_SIGNUP_URL, NavAnchor } from './NavAnchor';
@@ -24,6 +24,8 @@ const AccountButton: React.FC<{ onClick?: () => void; full?: boolean }> = ({ onC
 export const Header: React.FC = () => {
   const [open, setOpen] = useState(false);
   const { pathname } = useLocation();
+  const { user } = useUserAuth();
+  const onAccountPage = pathname === '/account';
 
   useEffect(() => {
     if (!open) return;
@@ -33,6 +35,21 @@ export const Header: React.FC = () => {
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [open]);
+
+  if (onAccountPage && !user) {
+    return (
+      <header className="account-page-header">
+        <div className="account-page-header-inner">
+          <Link className="account-page-back" to="/" onClick={() => window.scrollTo({ top: 0 })}>
+            <ArrowLeft size={17} aria-hidden="true" /> Back to site
+          </Link>
+          <Link className="account-page-brand" to="/" aria-label="AeroFareX home" onClick={() => window.scrollTo({ top: 0 })}>
+            <img src="/logo_long_v2.svg" alt="AeroFareX" />
+          </Link>
+        </div>
+      </header>
+    );
+  }
 
   return (
     <header className="header theme-dark">

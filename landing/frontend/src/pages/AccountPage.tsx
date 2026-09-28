@@ -61,11 +61,10 @@ export const AccountPage: React.FC = () => {
         <section className="account-access" aria-labelledby="account-access-title">
           <div className="account-access-layout container">
             <div className="account-access-story">
-              <p className="account-access-kicker"><span>01 / YOUR ACCOUNT</span><span>AEROFAREX</span></p>
+              <p className="account-access-kicker">YOUR ACCOUNT</p>
               <div className="account-access-copy">
-                <p className="eyebrow">Your travel account</p>
                 <h1 id="account-access-title">Your searches,<br /><span className="grad">ready when you return.</span></h1>
-                <p>Keep your fare searches and saved routes in one place. Find them again when you need them.</p>
+                <p>Save fare searches and routes in one place.</p>
               </div>
               <p className="account-access-privacy"><LockKeyhole size={15} aria-hidden="true" /> Only you can see your account data.</p>
             </div>
@@ -73,9 +72,8 @@ export const AccountPage: React.FC = () => {
             <div className="account-access-form-area">
               <div className="account-access-form">
                 <div className="account-access-form-head">
-                  <span className="account-access-form-index">AEROFAREX / ACCOUNT</span>
                   <h2>Your account.</h2>
-                  <p>Sign in or create a free account to save your routes.</p>
+                  <p>Sign in or create an account to save and find routes.</p>
                 </div>
                 <AuthPanel initialMode="signin" />
               </div>

@@ -7,6 +7,7 @@
 
 export const palette = {
   sky100: '#f5fdff',
+  sky150: '#dceff4',
   sky200: '#d6f7ff',
   sky300: '#a8eeff',
   sky400: '#6ce2ff',

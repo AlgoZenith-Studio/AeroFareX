@@ -21,6 +21,7 @@
    * 1. RAW PALETTE — the only literal colour values in the system
    * ---------------------------------------------------------------------- */
   --sky-100: #f5fdff;  /* rgb(245,253,255)  palest tint — alt section bg        */
+  --sky-150: #dceff4;  /* account page background                         */
   --sky-200: #d6f7ff;  /* rgb(214,247,255)  soft tint — selected states, tiles  */
   --sky-300: #a8eeff;  /* rgb(168,238,255)  light — borders, secondary bars     */
   --sky-400: #6ce2ff;  /* rgb(108,226,255)  bright — editorial band bg, marker  */
@@ -113,6 +114,9 @@
     radial-gradient(80% 65% at 0% 0%, var(--white), transparent 62%),
     radial-gradient(75% 70% at 100% 100%, var(--sky-200), transparent 66%),
     var(--sky-100);
+  --bg-account:
+    radial-gradient(55% 70% at 100% 0%, var(--sky-200), transparent 76%),
+    var(--sky-150);
   --bg-sky-200:
     radial-gradient(75% 60% at 8% 0%, var(--sky-100), transparent 62%),
     radial-gradient(75% 70% at 100% 100%, var(--sky-300), transparent 66%),

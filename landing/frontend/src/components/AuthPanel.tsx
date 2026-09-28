@@ -1,6 +1,6 @@
 import React, { useId, useState } from 'react';
 import { FirebaseError } from 'firebase/app';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, Eye, EyeOff, LockKeyhole } from 'lucide-react';
 import { useUserAuth } from '../lib/userAuth';
 
 const MESSAGES: Record<string, string> = {
@@ -20,6 +20,7 @@ export const AuthPanel: React.FC<{ initialMode?: 'signin' | 'signup' }> = ({ ini
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [msg, setMsg] = useState<{ kind: 'error' | 'info'; text: string } | null>(null);
   const [busy, setBusy] = useState(false);
   const passwordId = useId();
@@ -87,11 +88,22 @@ export const AuthPanel: React.FC<{ initialMode?: 'signin' | 'signup' }> = ({ ini
               </button>
             )}
           </span>
-          <input
-            id={passwordId}
-            type="password" required minLength={8} autoComplete={signup ? 'new-password' : 'current-password'}
-            value={password} onChange={(e) => setPassword(e.target.value)} placeholder={signup ? 'At least 8 characters' : '••••••••'}
-          />
+          <div className="auth-password-input">
+            <input
+              id={passwordId}
+              type={showPassword ? 'text' : 'password'} required minLength={8} autoComplete={signup ? 'new-password' : 'current-password'}
+              value={password} onChange={(e) => setPassword(e.target.value)} placeholder={signup ? 'At least 8 characters' : '••••••••'}
+            />
+            <button
+              type="button"
+              className="auth-password-toggle"
+              aria-label={showPassword ? 'Hide password' : 'Show password'}
+              aria-pressed={showPassword}
+              onClick={() => setShowPassword((visible) => !visible)}
+            >
+              {showPassword ? <EyeOff size={18} aria-hidden="true" /> : <Eye size={18} aria-hidden="true" />}
+            </button>
+          </div>
         </div>
         {msg && <p className="auth-msg" data-kind={msg.kind} role={msg.kind === 'error' ? 'alert' : 'status'}>{msg.text}</p>}
         <button type="submit" className="btn btn-primary" disabled={busy}>
@@ -99,8 +111,8 @@ export const AuthPanel: React.FC<{ initialMode?: 'signin' | 'signup' }> = ({ ini
         </button>
       </form>
       <p className="auth-fine">
-        Free, no ads. We keep your search history and saved routes so you can come back to them; you can delete them,
-        or your whole account, at any time.
+        <LockKeyhole size={14} aria-hidden="true" />
+        <span>No ads. Delete your searches, saved routes, or account at any time.</span>
       </p>
     </div>
   );
