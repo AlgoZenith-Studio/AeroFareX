@@ -34,21 +34,37 @@ export const LineChart: React.FC<{
   const hatchId = useId().replace(/:/g, '');
 
   const dates = series[0]?.points.map((p) => p.date) ?? [];
-  const { x, y, yTicks } = useMemo(() => {
+  const { x, y, yTicks, rightMargin } = useMemo(() => {
     const values = series.flatMap((s) => s.points.map((p) => p.value));
     const lo = Math.min(...values);
     const hi = Math.max(...values);
     const pad = (hi - lo) * 0.12 || 1;
+
+    const maxLabelLen = Math.max(
+      ...series.map((s) => {
+        const lastVal = s.points[s.points.length - 1]?.value ?? 0;
+        return `${s.label} ${format(lastVal)}`.length;
+      }),
+      10,
+    );
+    const calculatedRight = Math.min(260, Math.max(120, Math.round(maxLabelLen * 7.5 + 28)));
+
     const yScale = scaleLinear().domain([lo - pad, hi + pad]).nice(5).range([height - M.bottom, M.top]);
-    const xScale = scaleLinear().domain([0, Math.max(1, dates.length - 1)]).range([M.left, Math.max(M.left + 10, width - M.right)]);
-    return { x: xScale, y: yScale, yTicks: yScale.ticks(5) };
-  }, [series, width, height, dates.length]);
+    const xScale = scaleLinear().domain([0, Math.max(1, dates.length - 1)]).range([M.left, Math.max(M.left + 10, width - calculatedRight)]);
+    return { x: xScale, y: yScale, yTicks: yScale.ticks(5), rightMargin: calculatedRight };
+  }, [series, width, height, dates.length, format]);
 
   if (!series.length || !dates.length) return null;
 
   const boundaryIdx = provenanceBoundary ? dates.indexOf(provenanceBoundary) : -1;
   const xTickEvery = Math.max(1, Math.ceil(dates.length / Math.max(2, Math.floor(width / 90))));
   const path = d3line<{ date: string; value: number }>().x((_, i) => x(i)).y((p) => y(p.value));
+
+  const formatTickDate = (d: string) => {
+    if (!d) return '';
+    if (/^\d{4}-\d{2}-\d{2}/.test(d)) return shortDate(d);
+    return d;
+  };
 
   // Direct labels at the right, nudged apart so they never collide.
   const ends = series
@@ -63,9 +79,9 @@ export const LineChart: React.FC<{
   };
 
   return (
-    <div ref={ref} className="relative w-full" style={{ height }}>
+    <div ref={ref} className="relative w-full overflow-hidden" style={{ height }}>
       {width > 0 && (
-        <svg width={width} height={height} role="img" aria-label={ariaLabel} className="overflow-visible">
+        <svg width={width} height={height} role="img" aria-label={ariaLabel} className="overflow-hidden">
           <defs>
             <HatchDef id={hatchId} color="color-mix(in srgb, var(--sky-600) 16%, transparent)" />
           </defs>
@@ -83,12 +99,12 @@ export const LineChart: React.FC<{
           {/* recessive grid + axes */}
           {yTicks.map((t) => (
             <g key={t}>
-              <line x1={M.left} x2={width - M.right} y1={y(t)} y2={y(t)} stroke="var(--grid)" />
+              <line x1={M.left} x2={width - rightMargin} y1={y(t)} y2={y(t)} stroke="var(--grid)" />
               <text x={M.left - 8} y={y(t)} dy="0.32em" textAnchor="end" className="num fill-text-3 text-[11px]">{t}</text>
             </g>
           ))}
           {dates.map((d, i) => ((i % xTickEvery === 0 && dates.length - 1 - i >= xTickEvery * 0.6) || i === dates.length - 1) && (
-            <text key={d} x={x(i)} y={height - 8} textAnchor="middle" className="fill-text-3 text-[11px]">{shortDate(d)}</text>
+            <text key={d} x={x(i)} y={height - 8} textAnchor="middle" className="fill-text-3 text-[11px]">{formatTickDate(d)}</text>
           ))}
 
           {series.map((s) => (
@@ -119,7 +135,7 @@ export const LineChart: React.FC<{
             </g>
           )}
           <rect
-            x={M.left} y={M.top} width={Math.max(0, width - M.left - M.right)} height={height - M.top - M.bottom}
+            x={M.left} y={M.top} width={Math.max(0, width - M.left - rightMargin)} height={height - M.top - M.bottom}
             fill="transparent" onPointerMove={onMove} onPointerLeave={() => setHover(null)}
           />
         </svg>
