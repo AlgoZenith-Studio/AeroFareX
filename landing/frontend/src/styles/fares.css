@@ -443,7 +443,14 @@
   background: color-mix(in srgb, var(--sky-900) 8%, var(--white));
   box-shadow: inset 0 1px 3px color-mix(in srgb, var(--sky-900) 13%, transparent);
 }
-.account-access-form .auth-tabs button { border-radius: var(--r-pill); padding: 8px var(--s-3); }
+.account-access-form .auth-tabs button {
+  border-radius: var(--r-pill);
+  padding: 10px var(--s-3);
+  height: 42px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
 .account-access-form .auth-tabs button[aria-pressed='true'] { background: var(--sky-900); box-shadow: 0 2px 7px color-mix(in srgb, var(--sky-900) 25%, transparent); }
 .account-access-form .auth-panel > .btn-ghost {
   width: 100%; height: 42px; border: 0;

@@ -71,9 +71,9 @@ export default function LoginPage() {
         <ArrowLeft size={16} aria-hidden /> Back to website
       </a>
 
-      <div className="grid w-full max-w-[1020px] overflow-hidden rounded-[32px] bg-white text-slate-900 shadow-2xl border border-slate-200/80 md:grid-cols-[1fr_1.05fr]">
+      <div className="grid w-full max-w-[1020px] min-h-[680px] overflow-hidden rounded-[32px] bg-white text-slate-900 shadow-2xl border border-slate-200/80 md:grid-cols-[1fr_1.05fr]">
         {/* ---------------------------------------------------------------- left: photo + brand */}
-        <div className="relative isolate flex min-h-[260px] flex-col justify-between p-7 text-white md:min-h-[580px] md:p-10">
+        <div className="relative isolate flex min-h-[260px] flex-col justify-between p-7 text-white md:min-h-[680px] md:p-10">
           <img src="/mini_img.webp" alt="" className="absolute inset-0 -z-10 h-full w-full object-cover object-[center_42%] md:object-center" />
           {/* Dark at the top (logo) and bottom (headline), clear through the middle */}
           <div
@@ -108,13 +108,13 @@ export default function LoginPage() {
         </div>
 
         {/* ---------------------------------------------------------------- right: sign in */}
-        <div className="flex flex-col justify-between px-7 py-7 sm:px-9 sm:py-9 md:px-10 md:py-10">
+        <div className="flex min-h-[680px] flex-col justify-between px-7 py-7 sm:px-9 sm:py-9 md:px-10 md:py-10">
           <div className="w-full max-w-[390px] mx-auto flex flex-col">
             <span className="eyebrow text-xs tracking-widest">Analyst portal</span>
             <h1 className="mt-1 font-display text-[clamp(26px,2.4vw,32px)] font-bold leading-tight text-text-1">
               {signup ? 'Request access' : 'Welcome back'}
             </h1>
-            <p className="mt-1 text-sm text-text-2 leading-relaxed">
+            <p className="mt-1 min-h-[40px] text-sm text-text-2 leading-relaxed">
               {signup
                 ? 'For NSO, RBI, DGCA and ministry staff. An admin approves every request.'
                 : 'Sign in with your work account to continue.'}
@@ -126,7 +126,7 @@ export default function LoginPage() {
                 type="button"
                 onClick={() => { setMode('signin'); setError(null); setNotice(null); }}
                 className={clsx(
-                  'flex-1 rounded-full py-2 px-3 text-xs sm:text-sm font-bold transition-all cursor-pointer text-center',
+                  'flex-1 h-[42px] rounded-full py-2 px-3 text-base sm:text-lg font-bold transition-all cursor-pointer text-center flex items-center justify-center',
                   !signup
                     ? 'bg-[#04282e] text-white shadow-[0_2px_7px_rgba(4,40,46,0.25)]'
                     : 'text-[#04282e] hover:opacity-80'
@@ -138,7 +138,7 @@ export default function LoginPage() {
                 type="button"
                 onClick={() => { setMode('signup'); setError(null); setNotice(null); }}
                 className={clsx(
-                  'flex-1 rounded-full py-2 px-3 text-xs sm:text-sm font-bold transition-all cursor-pointer text-center',
+                  'flex-1 h-[42px] rounded-full py-2 px-3 text-base sm:text-lg font-bold transition-all cursor-pointer text-center flex items-center justify-center',
                   signup
                     ? 'bg-[#04282e] text-white shadow-[0_2px_7px_rgba(4,40,46,0.25)]'
                     : 'text-[#04282e] hover:opacity-80'
@@ -163,9 +163,9 @@ export default function LoginPage() {
                   type="button"
                   disabled={busy}
                   onClick={() => void run(signInWithGoogle)}
-                  className="btn mt-2.5 h-[42px] w-full justify-center rounded-full bg-[#e6f6fc] hover:bg-[#d5f0fa] text-[#04282e] font-bold border-0 shadow-none transition-all disabled:opacity-60 cursor-pointer text-xs sm:text-sm gap-2.5"
+                  className="btn mt-2.5 h-[42px] w-full justify-center rounded-full bg-[#e6f6fc] hover:bg-[#d5f0fa] text-[#04282e] font-bold border-0 shadow-none transition-all disabled:opacity-60 cursor-pointer text-base sm:text-lg gap-2.5"
                 >
-                  <svg className="size-4 shrink-0" viewBox="0 0 24 24" aria-hidden="true">
+                  <svg className="size-5 shrink-0" viewBox="0 0 24 24" aria-hidden="true">
                     <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
                     <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
                     <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" />
