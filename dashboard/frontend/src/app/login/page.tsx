@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { FirebaseError } from 'firebase/app';
+import clsx from 'clsx';
 import { ArrowLeft, ArrowRight, Eye, EyeOff, Lock, Mail, ShieldCheck, Sparkles, User } from 'lucide-react';
 import { useAuth } from '@/lib/auth/AuthProvider';
 import { DEV_ROLE, LANDING_URL } from '@/lib/config';
@@ -18,7 +19,7 @@ const MESSAGES: Record<string, string> = {
 };
 
 const inputBox =
-  'flex h-10 items-center gap-2.5 rounded-xl text-sm border border-line-control bg-surface px-3.5 transition-colors focus-within:border-sky-600 focus-within:shadow-[0_0_0_4px_color-mix(in_srgb,var(--sky-500)_22%,transparent)]';
+  'flex h-12 items-center gap-3 rounded-2xl text-sm sm:text-base border border-line/60 bg-surface-alt/70 px-4 transition-all focus-within:border-sky-500 focus-within:bg-surface focus-within:ring-4 focus-within:ring-sky-500/15 shadow-2xs';
 
 export default function LoginPage() {
   const { status, signInWithEmail, signInWithGoogle, signUp, resetPassword, signInDevPreview } = useAuth();
@@ -58,21 +59,21 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="relative isolate grid min-h-screen place-items-center overflow-hidden p-4">
+    <div className="relative isolate grid min-h-screen place-items-center overflow-hidden p-4 sm:p-6 md:p-8 select-none">
       {/* Page background: sunset cloud deck, lightly dimmed so the card stands out */}
       <div aria-hidden className="absolute inset-0 -z-10 bg-cover bg-center" style={{ backgroundImage: 'url(/long_bg.jpg)' }} />
       <div aria-hidden className="absolute inset-0 -z-10" style={{ background: 'color-mix(in srgb, var(--ink) 35%, transparent)' }} />
 
       <a
         href={LANDING_URL}
-        className="absolute left-4 top-4 inline-flex h-10 items-center gap-2 rounded-full bg-white/90 px-4 text-sm font-bold text-black shadow-e2 backdrop-blur hover:bg-white sm:left-6 sm:top-6"
+        className="absolute left-4 top-4 inline-flex h-10 items-center gap-2 rounded-full bg-white/90 px-4 text-xs sm:text-sm font-bold text-black shadow-md backdrop-blur hover:bg-white transition-all sm:left-6 sm:top-6 md:left-8 md:top-8"
       >
         <ArrowLeft size={16} aria-hidden /> Back to website
       </a>
 
-      <div className="grid w-full max-w-[752px] overflow-hidden rounded-[24px] bg-surface shadow-e3 md:grid-cols-[1.05fr_1fr]">
+      <div className="grid w-full max-w-[1020px] overflow-hidden rounded-[32px] bg-surface shadow-2xl border border-line/60 md:grid-cols-[1fr_1.05fr]">
         {/* ---------------------------------------------------------------- left: photo + brand */}
-        <div className="relative isolate flex min-h-[240px] flex-col justify-between p-6 text-white md:min-h-[476px] md:p-6">
+        <div className="relative isolate flex min-h-[260px] flex-col justify-between p-7 text-white md:min-h-[580px] md:p-10">
           <img src="/mini_img.webp" alt="" className="absolute inset-0 -z-10 h-full w-full object-cover object-[center_42%] md:object-center" />
           {/* Dark at the top (logo) and bottom (headline), clear through the middle */}
           <div
@@ -87,130 +88,172 @@ export default function LoginPage() {
             }}
           />
           {/* Whitish "jelly" plate, centred on the panel: solid gradient, glossy rim */}
-          <div className="glass-plate self-center px-4 py-3">
+          <div className="glass-plate self-center px-6 py-4 shadow-xl">
             <img
               src="/logo-long.png"
               alt="AeroFareX: Real-Time Airfare Price Index for India"
               width={260}
               height={56}
-              className="relative h-auto w-[clamp(170px,16vw,210px)]"
+              className="relative h-auto w-[clamp(190px,18vw,240px)]"
             />
           </div>
           <div>
-            <p className="font-display text-[clamp(19px,1.9vw,24px)] leading-tight [text-shadow:var(--text-shadow-dark)]">
+            <p className="font-display text-[clamp(21px,2.1vw,27px)] font-bold leading-tight [text-shadow:var(--text-shadow-dark)]">
               The analyst portal for India’s daily airfare index.
             </p>
-            <p className="mt-3 hidden max-w-[40ch] text-sm text-white/85 md:block">
+            <p className="mt-3 hidden max-w-[42ch] text-sm text-white/85 leading-relaxed md:block">
               For NSO, RBI and DGCA staff. Access is granted per person by an AeroFareX admin.
             </p>
           </div>
         </div>
 
         {/* ---------------------------------------------------------------- right: sign in */}
-        <div className="flex flex-col px-6 py-5 sm:px-7 sm:py-6">
-          <span className="eyebrow">Analyst portal</span>
-          <h1 className="mt-2 text-[clamp(24px,2.1vw,28px)] leading-tight">{signup ? 'Request access' : 'Welcome back'}</h1>
-          <p className="mt-1.5 text-sm text-text-2">
+        <div className="flex flex-col px-7 py-7 sm:px-9 sm:py-9 md:px-10 md:py-10">
+          <span className="eyebrow text-xs tracking-widest">Analyst portal</span>
+          <h1 className="mt-1.5 font-display text-[clamp(26px,2.4vw,32px)] font-bold leading-tight text-text-1">
+            {signup ? 'Request access' : 'Welcome back'}
+          </h1>
+          <p className="mt-1.5 text-sm text-text-2 leading-relaxed">
             {signup
               ? 'For NSO, RBI, DGCA and ministry staff. An admin approves every request.'
               : 'Sign in with your work account to continue.'}
           </p>
 
+          {/* Mode Switcher Pill Tabs */}
+          <div className="mt-5 flex rounded-full bg-surface-alt/80 p-1.5 border border-line/60 shadow-2xs">
+            <button
+              type="button"
+              onClick={() => { setMode('signin'); setError(null); setNotice(null); }}
+              className={clsx(
+                'flex-1 rounded-full py-2 text-xs sm:text-sm font-bold transition-all cursor-pointer',
+                !signup
+                  ? 'bg-black text-white shadow-xs'
+                  : 'text-text-2 hover:text-text-1'
+              )}
+            >
+              Sign in
+            </button>
+            <button
+              type="button"
+              onClick={() => { setMode('signup'); setError(null); setNotice(null); }}
+              className={clsx(
+                'flex-1 rounded-full py-2 text-xs sm:text-sm font-bold transition-all cursor-pointer',
+                signup
+                  ? 'bg-black text-white shadow-xs'
+                  : 'text-text-2 hover:text-text-1'
+              )}
+            >
+              Request access
+            </button>
+          </div>
+
           {status === 'unconfigured' ? (
-            <div className="mt-6 rounded-xl bg-status-warning/15 p-4 text-sm" role="alert">
-              <p className="font-medium">Firebase isn’t configured yet.</p>
-              <p className="mt-1 text-text-2">
+            <div className="mt-6 rounded-2xl bg-status-warning/15 p-4 sm:p-5 text-sm" role="alert">
+              <p className="font-bold text-text-1">Firebase isn’t configured yet.</p>
+              <p className="mt-1 text-text-2 leading-relaxed">
                 Copy <code className="font-mono">.env.example</code> to <code className="font-mono">.env.local</code> and fill in the
                 <code className="font-mono"> NEXT_PUBLIC_FIREBASE_*</code> values from your Firebase project settings, then restart.
               </p>
             </div>
           ) : (
             <>
+              {/* Google OAuth Button */}
               <button
                 type="button"
                 disabled={busy}
                 onClick={() => void run(signInWithGoogle)}
-                className="btn btn-outline mt-4 h-10 w-full text-sm justify-center disabled:opacity-60"
+                className="btn mt-5 h-12 w-full justify-center rounded-2xl bg-sky-100/70 hover:bg-sky-200/80 text-sky-950 font-bold border border-sky-200/60 shadow-2xs transition-all disabled:opacity-60 cursor-pointer text-sm gap-3"
               >
-                <span className="grid size-5 place-items-center rounded-full border border-line-control text-[11px] font-bold" aria-hidden>G</span>
+                <svg className="size-4.5 shrink-0" viewBox="0 0 24 24" aria-hidden="true">
+                  <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+                  <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+                  <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" />
+                  <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" />
+                </svg>
                 {signup ? 'Request with Google' : 'Continue with Google'}
               </button>
 
-              <div className="my-3.5 flex items-center gap-3 text-xs text-text-3">
-                <span className="h-px flex-1 bg-line" />{signup ? 'or with your work email' : 'or sign in with email'}<span className="h-px flex-1 bg-line" />
+              <div className="my-4 flex items-center gap-3 text-xs text-text-3 font-medium">
+                <span className="h-px flex-1 bg-line/70" />
+                <span>{signup ? 'or with your work email' : 'or sign in with email'}</span>
+                <span className="h-px flex-1 bg-line/70" />
               </div>
 
               <form
-                className="flex flex-col gap-3"
+                className="flex flex-col gap-3.5"
                 onSubmit={(e) => {
                   e.preventDefault();
                   void run(() => (signup ? signUp(name, email, password) : signInWithEmail(email, password)));
                 }}
               >
                 {signup && (
-                  <label className="flex flex-col gap-1.5 text-sm font-medium">
+                  <label className="flex flex-col gap-1.5 text-xs sm:text-sm font-bold text-text-1">
                     Full name
                     <span className={inputBox}>
-                      <User size={17} className="text-text-3" aria-hidden />
+                      <User size={18} className="text-text-3 shrink-0" aria-hidden />
                       <input
                         required autoComplete="name" placeholder="Your name"
                         value={name} onChange={(e) => setName(e.target.value)}
-                        className="min-w-0 flex-1 bg-transparent font-normal outline-none placeholder:text-text-3"
+                        className="min-w-0 flex-1 bg-transparent font-normal outline-none placeholder:text-text-3 text-sm sm:text-base"
                       />
                     </span>
                   </label>
                 )}
-                <label className="flex flex-col gap-1.5 text-sm font-medium">
+                <label className="flex flex-col gap-1.5 text-xs sm:text-sm font-bold text-text-1">
                   Work email
                   <span className={inputBox}>
-                    <Mail size={17} className="text-text-3" aria-hidden />
+                    <Mail size={18} className="text-text-3 shrink-0" aria-hidden />
                     <input
                       type="email" required autoComplete="email" placeholder="name@mospi.gov.in"
                       value={email} onChange={(e) => setEmail(e.target.value)}
-                      className="min-w-0 flex-1 bg-transparent font-normal outline-none placeholder:text-text-3"
+                      className="min-w-0 flex-1 bg-transparent font-normal outline-none placeholder:text-text-3 text-sm sm:text-base"
                     />
                   </span>
                 </label>
 
-                <div className="flex flex-col gap-1.5 text-sm font-medium">
+                <div className="flex flex-col gap-1.5 text-xs sm:text-sm font-bold text-text-1">
                   <span className="flex items-center justify-between">
                     <label htmlFor="password">{signup ? 'Create a password' : 'Password'}</label>
                     {!signup && (
-                      <button type="button" onClick={forgot} className="text-xs font-bold text-sky-800 hover:underline">Forgot password?</button>
+                      <button type="button" onClick={forgot} className="text-xs font-bold text-sky-800 hover:underline cursor-pointer">Forgot password?</button>
                     )}
                   </span>
                   <span className={inputBox}>
-                    <Lock size={17} className="text-text-3" aria-hidden />
+                    <Lock size={18} className="text-text-3 shrink-0" aria-hidden />
                     <input
                       id="password" type={showPassword ? 'text' : 'password'} required minLength={8} autoComplete={signup ? 'new-password' : 'current-password'} placeholder="••••••••"
                       value={password} onChange={(e) => setPassword(e.target.value)}
-                      className="min-w-0 flex-1 bg-transparent font-normal outline-none placeholder:text-text-3"
+                      className="min-w-0 flex-1 bg-transparent font-normal outline-none placeholder:text-text-3 text-sm sm:text-base"
                     />
                     <button
                       type="button"
                       onClick={() => setShowPassword((v) => !v)}
                       aria-label={showPassword ? 'Hide password' : 'Show password'}
-                      className="text-text-3 hover:text-text-1"
+                      className="text-text-3 hover:text-text-1 cursor-pointer"
                     >
-                      {showPassword ? <EyeOff size={17} /> : <Eye size={17} />}
+                      {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                     </button>
                   </span>
                 </div>
 
-                {error && <p className="rounded-xl bg-status-critical/10 px-3 py-2 text-sm text-status-critical" role="alert">{error}</p>}
-                {notice && <p className="rounded-xl bg-status-good/10 px-3 py-2 text-sm text-text-1" role="status">{notice}</p>}
+                {error && <p className="rounded-xl bg-status-critical/10 px-3.5 py-2.5 text-xs sm:text-sm text-status-critical font-medium" role="alert">{error}</p>}
+                {notice && <p className="rounded-xl bg-status-good/10 px-3.5 py-2.5 text-xs sm:text-sm text-text-1 font-medium" role="status">{notice}</p>}
 
-                <button type="submit" disabled={busy} className="btn btn-primary mt-1 h-10 w-full text-sm justify-center disabled:opacity-60">
-                  {busy ? 'Please wait…' : signup ? 'Request access' : 'Sign in'} {!busy && <ArrowRight size={17} aria-hidden />}
+                <button
+                  type="submit"
+                  disabled={busy}
+                  className="btn mt-2.5 h-12 w-full justify-center rounded-2xl bg-sky-400 hover:bg-sky-300 text-sky-950 font-bold text-sm sm:text-base shadow-lg shadow-sky-400/30 gap-2.5 transition-all disabled:opacity-60 cursor-pointer"
+                >
+                  {busy ? 'Please wait…' : signup ? 'Request access' : 'Sign in'} {!busy && <ArrowRight size={18} aria-hidden />}
                 </button>
               </form>
 
-              <p className="mt-3 text-center text-xs text-text-2">
+              <p className="mt-4 text-center text-xs sm:text-sm text-text-2">
                 {signup ? 'Already approved? ' : 'New to the portal? '}
                 <button
                   type="button"
                   onClick={() => { setMode(signup ? 'signin' : 'signup'); setError(null); setNotice(null); }}
-                  className="font-bold text-sky-800 hover:underline"
+                  className="font-bold text-sky-800 hover:underline cursor-pointer"
                 >
                   {signup ? 'Sign in' : 'Request access'}
                 </button>
@@ -219,21 +262,25 @@ export default function LoginPage() {
           )}
 
           {DEV_ROLE && (
-            <div className="mt-3 flex items-center justify-between gap-3 rounded-xl border border-dashed border-line-control bg-surface-alt px-3 py-2">
-              <span className="flex items-center gap-2 text-xs text-text-2">
-                <Sparkles size={15} className="text-sky-800" aria-hidden />
-                Local preview · <b className="text-text-1">{DEV_ROLE.toLowerCase()}</b>
+            <div className="mt-4 flex items-center justify-between gap-3 rounded-2xl border border-dashed border-sky-400/40 bg-sky-50/50 dark:bg-sky-950/20 px-4 py-3 shadow-2xs">
+              <span className="flex items-center gap-2 text-xs sm:text-sm text-text-2">
+                <Sparkles size={16} className="text-sky-600 fill-sky-600/20" aria-hidden />
+                Local preview · <b className="font-bold text-text-1">{DEV_ROLE.toLowerCase()}</b>
               </span>
-              <button onClick={signInDevPreview} className="text-sm font-bold text-sky-800 hover:underline">Continue →</button>
+              <button onClick={signInDevPreview} className="text-xs sm:text-sm font-bold text-sky-800 hover:underline cursor-pointer inline-flex items-center gap-1">
+                Continue <ArrowRight size={14} />
+              </button>
             </div>
           )}
 
-          <p className="mt-auto flex items-center gap-2 pt-4 text-[11px] text-text-3">
-            <ShieldCheck size={15} className="shrink-0" aria-hidden />
-            Role-based access, secured by Firebase Authentication. Need access? Ask your AeroFareX admin.
+          <p className="mt-auto flex items-start gap-2.5 pt-5 text-xs leading-relaxed text-text-3">
+            <ShieldCheck size={16} className="shrink-0 text-sky-600 mt-0.5" aria-hidden />
+            <span>Role-based access, secured by Firebase Authentication. Need access? Ask your AeroFareX admin.</span>
           </p>
         </div>
       </div>
     </div>
   );
 }
+
+
