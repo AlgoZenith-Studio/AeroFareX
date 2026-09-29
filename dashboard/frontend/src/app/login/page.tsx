@@ -59,7 +59,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="relative isolate grid min-h-screen place-items-center overflow-hidden p-4 sm:p-6 md:p-8 select-none">
+    <div className="relative isolate grid min-h-screen place-items-center overflow-x-hidden p-6 sm:p-10 md:p-12 lg:p-16 select-none">
       {/* Page background: sunset cloud deck, lightly dimmed so the card stands out */}
       <div aria-hidden className="absolute inset-0 -z-10 bg-cover bg-center" style={{ backgroundImage: 'url(/long_bg.jpg)' }} />
       <div aria-hidden className="absolute inset-0 -z-10" style={{ background: 'color-mix(in srgb, var(--ink) 35%, transparent)' }} />
@@ -71,10 +71,10 @@ export default function LoginPage() {
         <ArrowLeft size={16} aria-hidden /> Back to website
       </a>
 
-      <div className="grid w-full max-w-[1020px] min-h-[680px] overflow-hidden rounded-[32px] bg-white text-slate-900 shadow-2xl border border-slate-200/80 md:grid-cols-[1fr_1.05fr]">
+      <div className="grid w-full max-w-[1000px] min-h-[640px] md:h-[640px] overflow-hidden rounded-[32px] bg-white text-slate-900 shadow-2xl border border-slate-200/80 md:grid-cols-2">
         {/* ---------------------------------------------------------------- left: photo + brand */}
-        <div className="relative isolate flex min-h-[260px] flex-col justify-between p-7 text-white md:min-h-[680px] md:p-10">
-          <img src="/mini_img.webp" alt="" className="absolute inset-0 -z-10 h-full w-full object-cover object-[center_42%] md:object-center" />
+        <div className="relative isolate flex min-h-[260px] md:h-[640px] flex-col justify-between p-7 text-white md:p-9">
+          <img src="/mini_img.webp" alt="" className="absolute inset-0 -z-10 h-full w-full object-cover object-center" />
           {/* Dark at the top (logo) and bottom (headline), clear through the middle */}
           <div
             aria-hidden
@@ -108,7 +108,7 @@ export default function LoginPage() {
         </div>
 
         {/* ---------------------------------------------------------------- right: sign in */}
-        <div className="flex min-h-[680px] flex-col justify-between px-7 py-7 sm:px-9 sm:py-9 md:px-10 md:py-10">
+        <div className="flex min-h-[640px] md:h-[640px] flex-col justify-between p-6 sm:p-8 md:p-9">
           <div className="w-full max-w-[390px] mx-auto flex flex-col">
             <span className="eyebrow text-xs tracking-widest">Analyst portal</span>
             <h1 className="mt-1 font-display text-[clamp(26px,2.4vw,32px)] font-bold leading-tight text-text-1">
