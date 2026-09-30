@@ -71,9 +71,9 @@ export default function LoginPage() {
         <ArrowLeft size={16} aria-hidden /> Back to website
       </a>
 
-      <div className="grid w-full max-w-[1040px] min-h-[620px] md:h-[620px] overflow-hidden rounded-[32px] text-slate-900 shadow-2xl md:grid-cols-[1.18fr_1fr]">
+      <div className="grid w-full max-w-[1040px] min-h-[660px] md:h-[660px] overflow-hidden rounded-[32px] text-slate-900 shadow-2xl md:grid-cols-[1.18fr_1fr]">
         {/* ---------------------------------------------------------------- left: photo + brand */}
-        <div className="relative isolate flex min-h-[260px] md:h-[620px] flex-col justify-between px-7 pt-7 pb-10 sm:px-9 sm:pt-9 sm:pb-12 md:px-10 md:pt-10 md:pb-12 text-white bg-[#04282e]">
+        <div className="relative isolate flex min-h-[260px] md:h-[660px] flex-col justify-between px-7 pt-7 pb-14 sm:px-9 sm:pt-9 sm:pb-16 md:px-10 md:pt-10 md:pb-16 text-white bg-[#04282e]">
           <img src="/mini_img.webp" alt="" className="absolute inset-0 -z-10 h-full w-full object-cover object-center" />
           {/* Dark at the top (logo) and bottom (headline), clear through the middle */}
           <div
@@ -108,7 +108,7 @@ export default function LoginPage() {
         </div>
 
         {/* ---------------------------------------------------------------- right: sign in */}
-        <div className="flex min-h-[620px] md:h-[620px] flex-col justify-between px-7 pt-7 pb-10 sm:px-9 sm:pt-9 sm:pb-12 md:px-10 md:pt-10 md:pb-12 bg-white">
+        <div className="flex min-h-[660px] md:h-[660px] flex-col justify-between px-7 pt-7 pb-14 sm:px-9 sm:pt-9 sm:pb-16 md:px-10 md:pt-10 md:pb-16 bg-white">
           <div className="w-full max-w-[390px] mx-auto flex flex-col">
             <span className="eyebrow text-xs tracking-widest">Analyst portal</span>
             <h1 className="mt-1 font-display text-[clamp(26px,2.4vw,32px)] font-bold leading-tight text-text-1">
